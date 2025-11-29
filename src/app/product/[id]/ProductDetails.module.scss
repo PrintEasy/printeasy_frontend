@@ -68,13 +68,14 @@
   min-width: 300px;
   display: flex;
   flex-direction: column;
-  gap: 1.2rem;
+  gap: 6px;
+  align-items: flex-start;
 
   // @media screen and (max-width: 700px) {
   //   margin-top: -100px;
   // }
   @media screen and (max-width: 435px) {
-    margin-top: -160px;
+    margin-top: -180px;
   }
   // @media screen and (max-width: 330px) {
   //   min-width: 100%;
@@ -85,7 +86,7 @@
     font-weight: 600;
 
     @media (max-width: 992px) {
-      text-align: center;
+      text-align: left;
     }
 
     @media (max-width: 768px) {
@@ -103,7 +104,7 @@
     text-align: left;
 
     @media (max-width: 992px) {
-      text-align: center;
+      text-align: left;
     }
 
     @media (max-width: 600px) {
@@ -113,10 +114,15 @@
 
   /* Price Section */
   .priceSection {
+    gap: 0.8rem;
+  }
+
+  .dis_price{
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 0.8rem;
+    justify-content: center;
+    text-align: center;
+    gap: 0.5rem;
 
     .discountedPrice {
       font-size: 1rem;
@@ -125,21 +131,18 @@
     }
 
     .basePrice {
-      font-size: 1.3rem;
+      font-size: 0.75rem;
       color: #777;
       text-decoration: line-through;
-    }
-
-    .price {
-      font-size: 1.8rem;
-      font-weight: bold;
-      margin-top: 0.5rem;
     }
   }
 
   /* Size Selection */
   .sizes {
-    margin-top: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    flex-direction: column;
 
     h4 {
       font-weight: 600;
@@ -148,6 +151,7 @@
 
       @media (max-width: 600px) {
         text-align: center;
+        margin-top: 20px;
       }
     }
 
@@ -162,6 +166,8 @@
       }
     }
 
+    
+
     .sizeBtn {
       border: 1px solid #000;
       background: #fff;
@@ -170,6 +176,7 @@
       transition: 0.2s;
       font-size: 0.9rem;
       border-radius: 4px;
+      white-space: noWrap;
 
       &:hover {
         background: #f8f8f8;
@@ -251,6 +258,33 @@
       font-size: 0.9rem;
     }
   }
+
+  .offerTag {
+  font-size: 1rem;
+  font-weight: 700;
+  color: green;
+  margin-left: 6px;
+}
+
+/* size measurement box */
+.sizeDetailsBox {
+  background: #e6e6e6;
+  padding: 5px 14px;
+  width: fit-content;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  gap: 6px;
+  color: #333;
+  margin-bottom: 14px;
+
+  span {
+    white-space: nowrap;
+  }
+
+ 
+}
+
 
 
 

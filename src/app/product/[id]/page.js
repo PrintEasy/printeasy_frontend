@@ -23,6 +23,7 @@ const ProductDetails = () => {
   const [loading, setLoading] = useState(true); // initially true
   const [activeSection, setActiveSection] = useState(null);
   const [designPng, setDesignPng] = useState("");
+  const [sizeInfo, setSizeInfo] = useState(null);
   const [printingImg, setPrintingImg] = useState({
     textColor: "",
     fontFamily: "",
@@ -30,6 +31,8 @@ const ProductDetails = () => {
     fontSize: "",
   });
   const [loader, setLoader] = useState(false);
+
+  console.log(sizeInfo?.options.length, "uuuttt");
 
   const accessToken = Cookies.get("idToken");
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -159,6 +162,19 @@ const ProductDetails = () => {
 
   const handleDesignChange = (designDataURL) => setDesignPng(designDataURL);
 
+  const handleSizeSelect = (size) => {
+    setSelectedSize(size);
+
+    // Find measurement data from response
+    const match = product?.configuration[0]?.options.find(
+      (item) => item.value === size
+    );
+
+    console.log(match, "ieyyerersxxx");
+
+    setSizeInfo(match || null);
+  };
+
   return (
     <div className={styles.container}>
       <ToastContainer position="top-right" autoClose={2000} />
@@ -168,6 +184,7 @@ const ProductDetails = () => {
           product={product}
           onDesignChange={handleDesignChange}
           setPrintingImg={setPrintingImg}
+          addToWishlist={addToWishlist}
         />
       ) : (
         <Image
@@ -181,15 +198,40 @@ const ProductDetails = () => {
 
       <div className={styles.infoSection}>
         {/* <p className={styles.subtitle}>{product?.subtitle}</p> */}
-
         <div className={styles.priceSection}>
           <h1>{product?.name}</h1>
+        </div>
+        <div className={styles.dis_price}>
           <p className={styles.discountedPrice}>₹ {product?.discountedPrice}</p>
+          <p className={styles.basePrice}>₹ {product?.basePrice}</p>
+
+          {product?.discountedPrice && product?.basePrice && (
+            <span className={styles.offerTag}>
+              {Math.round(
+                ((product.basePrice - product.discountedPrice) /
+                  product.basePrice) *
+                  100
+              )}
+              % OFF
+            </span>
+          )}
         </div>
 
         {product?.configuration?.[0]?.options?.length > 0 && (
           <div className={styles.sizes}>
             <h4>SELECT SIZE</h4>
+            {sizeInfo && (
+              <div className={styles.sizeDetailsBox}>
+                <span>Chest: {sizeInfo?.options[0]?.value} cm</span>
+                <span>Length: {sizeInfo?.options[1]?.value} cm</span>
+                {
+                  sizeInfo?.options.length > 2 &&
+                  <span>Sleeves Length: {sizeInfo?.options[2]?.value} cm</span>
+                }
+                
+              </div>
+            )}
+
             <div className={styles.sizeOptions}>
               {product?.configuration[0].options.map((s) => (
                 <button
@@ -197,7 +239,7 @@ const ProductDetails = () => {
                   className={`${styles.sizeBtn} ${
                     selectedSize === s.value ? styles.activeSize : ""
                   }`}
-                  onClick={() => setSelectedSize(s.value)}
+                  onClick={() => handleSizeSelect(s.value)}
                 >
                   {s.label}
                 </button>
@@ -220,35 +262,32 @@ const ProductDetails = () => {
             WISHLIST
           </button> */}
         </div>
-
-         <div className={styles.accordion}>
-        {[
-          { title: "DETAILS", content: product?.description },
-          { title: "CARE", content: product.care },
-        ].map((item, i) => (
-          <div
-            key={i}
-            className={styles.accordionItem}
-            onClick={() => setActiveSection(activeSection === i ? null : i)}
-          >
-            <div className={styles.accordionHeader}>
-              <h3>{item.title}</h3>
-              {activeSection === i ? <Minus size={20} /> : <Plus size={20} />}
-            </div>
-
+        <div className={styles.accordion}>
+          {[
+            { title: "DETAILS", content: product?.description },
+            { title: "CARE", content: product.care },
+          ].map((item, i) => (
             <div
-              className={`${styles.accordionContent} ${
-                activeSection === i ? styles.active : ""
-              }`}
+              key={i}
+              className={styles.accordionItem}
+              onClick={() => setActiveSection(activeSection === i ? null : i)}
             >
-              <p>{item.content}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-      </div>
+              <div className={styles.accordionHeader}>
+                <h3>{item.title}</h3>
+                {activeSection === i ? <Minus size={20} /> : <Plus size={20} />}
+              </div>
 
-     
+              <div
+                className={`${styles.accordionContent} ${
+                  activeSection === i ? styles.active : ""
+                }`}
+              >
+                <p>{item.content}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       <DynamicModal open={loader} onClose={() => setLoader(false)}>
         <AddToBagLoader />

@@ -1,6 +1,5 @@
 export const FONTS = [
   "Meanwhile",
-  "MONKEY",
   "MORELOVE",
   "PINK ROSE",
   "RAINBOWDREAMS",
