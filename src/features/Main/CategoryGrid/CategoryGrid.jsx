@@ -45,7 +45,7 @@ const CategoryGrid = () => {
 
   return (
     <main className={styles.featured_categories}>
-      <h3>FEATURED CATEGORIES</h3>
+      <h3 className={styles.featured_cat}>FEATURED CATEGORIES</h3>
       <section className={styles.gridWrapper}>
         {loading
           ? Array.from({ length: skeletonCount }).map((_, i) => (

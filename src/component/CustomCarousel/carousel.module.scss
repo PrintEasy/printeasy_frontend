@@ -39,14 +39,14 @@
 }
 
 :global(.slick-dots li button:before) {
-  font-size: 10px;
-  color: #888;
-  opacity: 1;
+  font-size: 13px !important;
+  color: #888 !important;
+  opacity: 1 !important;
 }
 
 :global(.slick-dots li.slick-active button:before) {
-  color: #ff7b00;
-  opacity: 1;
+  color: #ff7b00 !important;
+  opacity: 1 !important;
 }
 
 @media (max-width: 1024px) {
@@ -58,7 +58,7 @@
 /* ================= MOBILE UPDATED DESIGN ================= */
 @media (max-width: 768px) {
   .banner_image {
-    height: 100vh !important;
+    height: 75vh !important;
     width: 100%;
     border-radius: 0;
     object-fit: cover;
@@ -74,7 +74,7 @@
 
   .imageWrapper {
     position: relative;
-    height: 100vh;
+    height: 75vh;
   }
 
   /* Mobile overlay positioned on top of image */

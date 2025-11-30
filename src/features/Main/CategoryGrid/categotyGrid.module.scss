@@ -1,7 +1,7 @@
 .featured_categories {
   margin-top: 3.5rem;
 
-  h3 {
+  .featured_cat {
     font-size: 1.5rem;
     text-align: center;
     margin-top: 2rem;
@@ -13,7 +13,7 @@
     gap: 2rem;
     width: 100%;
     margin: 0 auto;
-    padding: 2rem 1rem;
+    padding: 1rem 1rem;
   }
 
   /* Skeleton shimmer loader */
@@ -49,36 +49,37 @@
       transform: translateX(100%);
     }
   }
+}
 
-  @media (max-width: 768px) {
-    .featured_categories{
-      margin-top: 1rem !important;
+@media (max-width: 768px) {
+  .featured_categories {
+    margin-top: 1rem !important;
 
-      h3{
-        margin-top:0 I !important;
-      }
+    .featured_cat {
+      margin-top: 0rem  !important;
     }
 
     .gridWrapper {
-      grid-template-columns: repeat(3, 1fr); // Always 3
+      grid-template-columns: repeat(3, 1fr);
       gap: 0.8rem;
       padding: 1rem 0.5rem;
     }
 
     .skeletonCard {
-      height: 120px; 
+      height: 120px;
     }
   }
+}
 
-  @media (max-width: 480px) {
-    .featured_categories{
-      margin-top: 1rem !important;
+@media (max-width: 480px) {
+  .featured_categories {
+    margin-top: 1rem !important;
 
-      h3{
-        margin-top:0 I !important;
-      }
+    .featured_cat {
+      font-size: 1.2rem;
+      margin-top: 0rem  !important;
     }
-    
+
     .gridWrapper {
       grid-template-columns: repeat(3, 1fr);
       gap: 0.5rem;

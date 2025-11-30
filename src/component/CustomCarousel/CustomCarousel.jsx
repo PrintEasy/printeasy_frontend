@@ -158,7 +158,6 @@ const CustomCarousel = () => {
               {isMobile && (
                 <div className={styles.mobileOverlay}>
                   <div className={styles.mobileHeader}>
-                    {/* Hamburger */}
                     <button
                       className={styles.iconButton}
                       aria-label="Menu"
