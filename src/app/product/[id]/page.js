@@ -185,10 +185,11 @@ const ProductDetails = () => {
           },
       });
       setRelatedData(res?.data?.data);
-      return res;
+      console.log(res,"pposueueuuexxxncbcbc")
+      return res; // <-- as requested
     } catch (error) {
       console.log(error, "error while fetching related data");
-      return null; 
+      return null; // safe return for failure
     }
   };
 

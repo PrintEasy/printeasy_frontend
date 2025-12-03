@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic"; 
+// app/category/page.jsx
 import Link from "next/link";
 import styles from "./categotyGrid.module.scss";
 import CategoryCard from "@/component/CategoryCard/CategoryCard";
@@ -7,18 +7,15 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
 const CategoryGridPage = async () => {
   let categories = [];
-  console.log(apiUrl,"ppoosxxxzz")
+
   try {
     const res = await fetch(`${apiUrl}/v1/categories/all`, {
       headers: {
         "x-api-key":
           "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
       },
-      cache: "no-store",
-       next: { revalidate: 0 }
+      cache: "force-cache",
     });
-   console.log("API URL from server:", apiUrl);
-console.log("Running on:", process.env.NODE_ENV);
 
     const data = await res.json();
     categories = data?.data?.[0]?.collections || [];
