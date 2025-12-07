@@ -22,13 +22,11 @@ const Cart = () => {
   const router = useRouter();
   const accessToken = Cookies.get("idToken");
 
-  console.log(offerData, "sbbsiieiexxxx");
 
   useEffect(() => {
     db.cart.toArray().then(setCartItems);
   }, []);
 
-  console.log(cartItems, "oopopopopoeerrxx");
 
   const handleQuantityChange = (id, newQuantity) => {
     if (newQuantity < 1) return;
@@ -107,7 +105,6 @@ const Cart = () => {
 
   const removeFromCart = async (productId) => {
     try {
-      console.log(productId, "sknsieieieieie");
       const item = await db.cart.where("productId").equals(productId).first();
 
       if (!item) {

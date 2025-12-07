@@ -17,6 +17,7 @@ import ProductDetailsShimmer from "@/component/ProductDetailsShimmer/ProductDeta
 import Suggested from "@/component/Suggested/Suggested";
 import BottomSheet from "@/component/BottomSheet/BottomSheet";
 import AddToCartSuccessSheet from "@/component/AddToCartSuccessSheet/AddToCartSuccessSheet";
+import { useCart } from "@/context/CartContext";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -27,7 +28,6 @@ const ProductDetails = () => {
   const [activeSection, setActiveSection] = useState(null);
   const [designPng, setDesignPng] = useState("");
   const [sizeInfo, setSizeInfo] = useState(null);
-  const [count, setCount] = useState(null);
   const [printingImg, setPrintingImg] = useState({
     textColor: "",
     fontFamily: "",
@@ -39,8 +39,8 @@ const ProductDetails = () => {
   const [loader, setLoader] = useState(false);
   const [relatedData, setRelatedData] = useState([]);
   const [showSuccessCart, setShowSuccessCart] = useState(false);
-
-  console.log(sizeInfo?.options.length, "uuuttt");
+  const { updateCart } = useCart();
+  
 
   const accessToken = Cookies.get("idToken");
 
@@ -76,67 +76,74 @@ const ProductDetails = () => {
     return <ProductDetailsShimmer />;
   }
 
-  const addToCart = async () => {
-    if (product?.configuration?.length > 0 && !selectedSize) {
-      setShowSizeSheet(true);
-      return;
-    }
+ const addToCart = async () => {
+  if (product?.configuration?.length > 0 && !selectedSize) {
+    setShowSizeSheet(true);
+    return;
+  }
 
-    const payload = {
-      productId: product.id,
-      categoryId: product.categoryId,
-      name: product.name,
-      sku: product.sku,
-      quantity,
-      basePrice: product.basePrice,
-      discountPrice: product.discountedPrice || product.basePrice,
-      totalPrice: (product.discountedPrice || product.basePrice) * quantity,
-      isCustomizable: product.isCustomizable,
-      productImageUrl: product.productImages?.[0] || product.canvasImage || "",
-      dimensions: {
-        length: product.dimension?.length || 0,
-        width: product.dimension?.width || 0,
-        height: product.dimension?.height || 0,
-        weight: product.dimension?.weight || 0,
+  const payload = {
+    productId: product.id,
+    categoryId: product.categoryId,
+    name: product.name,
+    sku: product.sku,
+    quantity,
+    basePrice: product.basePrice,
+    discountPrice: product.discountedPrice || product.basePrice,
+    totalPrice: (product.discountedPrice || product.basePrice) * quantity,
+    isCustomizable: product.isCustomizable,
+    productImageUrl: product.productImages?.[0] || product.canvasImage || "",
+    dimensions: {
+      length: product.dimension?.length || 0,
+      width: product.dimension?.width || 0,
+      height: product.dimension?.height || 0,
+      weight: product.dimension?.weight || 0,
+    },
+    options: [
+      {
+        label: "Size",
+        value: selectedSize,
       },
-      options: [
-        {
-          label: "Size",
-          value: selectedSize,
-        },
-      ],
-      addedAt: new Date().toISOString(),
-    };
-
-    try {
-      setLoader(true);
-      setLoading(true);
-
-      const existingItem = await db.cart
-        .where("productId")
-        .equals(product.id)
-        .first();
-
-      if (existingItem) {
-        await db.cart.update(existingItem.id, {
-          quantity: existingItem.quantity + quantity,
-          totalPrice:
-            (existingItem.discountPrice || existingItem.basePrice) *
-            (existingItem.quantity + quantity),
-        });
-      } else {
-        await db.cart.add(payload);
-      }
-
-      setShowSuccessCart(true);
-    } catch (err) {
-      console.error("Dexie error:", err);
-      toast.error("Failed to add to cart");
-    } finally {
-      setLoader(false);
-      setLoading(false);
-    }
+    ],
+    addedAt: new Date().toISOString(),
   };
+
+  try {
+    setLoader(true);
+    setLoading(true);
+
+    // Check if product already exists in cart
+    const existingItem = await db.cart
+      .where("productId")
+      .equals(product.id)
+      .first();
+
+    if (existingItem) {
+      await db.cart.update(existingItem.id, {
+        quantity: existingItem.quantity + quantity,
+        totalPrice:
+          (existingItem.discountPrice || existingItem.basePrice) *
+          (existingItem.quantity + quantity),
+      });
+    } else {
+      await db.cart.add(payload);
+    }
+
+    /** 🚀 Sync Updated Cart Count */
+    const updatedCartItems = await db.cart.toArray();
+    updateCart(updatedCartItems.length);
+
+    setShowSuccessCart(true);
+
+  } catch (err) {
+    console.error("Dexie error:", err);
+    toast.error("Failed to add to cart");
+  } finally {
+    setLoader(false);
+    setLoading(false);
+  }
+};
+
 
   const addToWishlist = async () => {
     if (!accessToken) {

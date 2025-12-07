@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import bag from "../../assessts/bag.svg";
 import share from "../../assessts/share.svg";
 import Image from "next/image";
+import { useCart } from "@/context/CartContext";
 
 export default function CanvasEditor({
   product,
@@ -26,6 +27,7 @@ export default function CanvasEditor({
   const [isWishlisted, setIsWishlisted] = useState(product?.isInWishlist);
   const [fonts, setFonts] = useState([]);
   const router = useRouter();
+  const { cartCount } = useCart();
   const count = localStorage.getItem("count");
 
   const loadFont = async (fontName) => {
@@ -367,7 +369,7 @@ export default function CanvasEditor({
       <div className={styles.mobileIconsContainer}>
         <div className={styles.mobileIconsRight}>
           <button className={styles.mobileIcon} onClick={() => router.push('/cart')}>
-            {count > "0" && <span className={styles.badge}>{count}</span>}
+            {cartCount > "0" && <span className={styles.badge}>{cartCount}</span>}
             <Image src={bag} alt="bag"/>
           </button>
           <button className={styles.mobileIcon} onClick={handleWishlistClick}>

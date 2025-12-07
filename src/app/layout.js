@@ -1,6 +1,7 @@
 import Footer from "@/features/footer/Footer";
 import "./globals.css";
 import Navbar from "@/features/Main/Navbar/Navbar";
+import { CartProvider } from "@/context/CartContext";
 
 export const metadata = {
   title: "OnRise Store",
@@ -18,11 +19,13 @@ export default function RootLayout({ children }) {
         <link src="https://checkout.razorpay.com/v1/checkout.js"></link>
       </head>
       <body>
-         <div className="navbar-wrapper">
-    <Navbar />
-  </div>
+        <CartProvider>
+        <div className="navbar-wrapper">
+          <Navbar />
+        </div>
         {children}
         <Footer />
+        </CartProvider>
       </body>
     </html>
   );
