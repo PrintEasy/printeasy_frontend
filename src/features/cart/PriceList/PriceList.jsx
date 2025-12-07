@@ -49,7 +49,7 @@ const PriceList = ({ bagTotal, grandTotal, handlePayNow, offerData }) => {
           <p>₹{finalPayable}</p>
         </div>
 
-        {applicable.length > 0 && (
+        {/* {applicable.length > 0 && (
           <div className={styles.rewardsApplied}>
             {applicable.map((reward) => (
               <p key={reward.id} className={styles.rewardRow}>
@@ -57,7 +57,7 @@ const PriceList = ({ bagTotal, grandTotal, handlePayNow, offerData }) => {
               </p>
             ))}
           </div>
-        )}
+        )} */}
 
         {/* Pay Button */}
         <button className={styles.payBtn} onClick={handlePayNow}>
