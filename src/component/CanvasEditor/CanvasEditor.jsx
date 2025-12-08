@@ -36,10 +36,7 @@ export default function CanvasEditor({
     // Use fontMap to match correct system name if needed
     const fileName = fontMap[fontName] || fontName;
 
-    const font = new FontFace(
-      fileName,
-      `url(/fonts/${fileName}.ttf)`
-    );
+    const font = new FontFace(fileName, `url(/fonts/${fileName}.ttf)`);
 
     try {
       await font.load();
@@ -214,7 +211,7 @@ export default function CanvasEditor({
   const addTextBelowIllustration = async (canvas, illustration) => {
     const topPos = illustration
       ? illustration.top + illustration.getScaledHeight() + 10
-      : (SAFE.top + SAFE.height / 2 - selectedSize / 2) + 65;
+      : SAFE.top + SAFE.height / 2 - selectedSize / 2 + 65;
 
     const fontName =
       fontMap[product?.fontFamily] || product?.fontFamily || selectedFont;
@@ -291,18 +288,32 @@ export default function CanvasEditor({
   const startTextEditing = () => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-    const textObj = canvas.getObjects().find((o) => o.type === "textbox");
+
+    const textObj =
+      activeTextRef.current ||
+      canvas.getObjects().find((o) => o.type === "textbox");
+
     if (!textObj) return;
 
     canvas.setActiveObject(textObj);
-    textObj.enterEditing();
-    canvas.requestRenderAll();
 
-    activeTextRef.current = textObj;
-    setIsEditing(true);
-    setSelectedFont(textObj.fontFamily || "Arial");
-    setSelectedColor(textObj.fill || "#000");
-    setSelectedSize(textObj.fontSize || 28);
+    // Allow fabric time to activate object then start editing
+    setTimeout(() => {
+      textObj.enterEditing();
+      textObj.selectAll();
+      canvas.requestRenderAll();
+
+      // Force focus into hidden textarea (VERY IMPORTANT)
+      try {
+        const ta = textObj.hiddenTextarea;
+        if (ta) ta.focus();
+      } catch (err) {
+        console.log("Textarea focus failed", err);
+      }
+
+      activeTextRef.current = textObj;
+      setIsEditing(true);
+    }, 50);
   };
 
   const applyToActiveText = (props) => {
@@ -368,9 +379,14 @@ export default function CanvasEditor({
       </div>
       <div className={styles.mobileIconsContainer}>
         <div className={styles.mobileIconsRight}>
-          <button className={styles.mobileIcon} onClick={() => router.push('/cart')}>
-            {cartCount > "0" && <span className={styles.badge}>{cartCount}</span>}
-            <Image src={bag} alt="bag"/>
+          <button
+            className={styles.mobileIcon}
+            onClick={() => router.push("/cart")}
+          >
+            {cartCount > "0" && (
+              <span className={styles.badge}>{cartCount}</span>
+            )}
+            <Image src={bag} alt="bag" />
           </button>
           <button className={styles.mobileIcon} onClick={handleWishlistClick}>
             <Heart
@@ -380,7 +396,7 @@ export default function CanvasEditor({
             />
           </button>
           <button className={styles.mobileIcon} onClick={handleShare}>
-            <Image src={share} alt="share"/>
+            <Image src={share} alt="share" />
           </button>
         </div>
       </div>
@@ -424,7 +440,10 @@ export default function CanvasEditor({
             <span className={styles.toolLabel}>Fonts</span>
           </button>
 
-          <div className={styles.toolButton}>
+          <div
+            className={styles.toolButton}
+            onClick={startTextEditing}
+          >
             <span className={styles.iconKeyboard}>⌨</span>
             <span className={styles.toolLabel}>Edit</span>
           </div>
