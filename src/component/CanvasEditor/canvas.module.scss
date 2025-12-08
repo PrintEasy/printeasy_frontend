@@ -1,5 +1,3 @@
-
-
 .editorWrapper {
   position: relative;
   width: fit-content;
@@ -68,12 +66,20 @@
   z-index: 1000;
   animation: slideUp 0.4s ease;
   @media (max-width: 480px) {
-    gap: 28px;
-    padding: 0 16px;
-    justify-content: center;
-
     .floatingToolbar {
-      bottom: 180px;
+      gap: 28px;
+      padding: 0 16px;
+      justify-content: center;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      transition: bottom 0.25s ease-in-out;
+      z-index: 9999;
+    }
+
+    .editorWrapper {
+      transition: padding-bottom 0.25s ease-in-out;
     }
   }
   @media (max-width: 440px) {
@@ -327,7 +333,7 @@
   }
 }
 
-.back{
+.back {
   position: absolute;
   top: 10px;
   left: 0px;
@@ -445,18 +451,18 @@
   color: #333;
 
   .badge {
-  position: absolute;
-  top: 0px;
-  right: -16px;
-  font-size: 10px;
-  font-weight: 500;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+    position: absolute;
+    top: 0px;
+    right: -16px;
+    font-size: 10px;
+    font-weight: 500;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
   @media screen and (max-width: 480px) {
     width: 36px;

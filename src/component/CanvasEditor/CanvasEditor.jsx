@@ -373,33 +373,35 @@ export default function CanvasEditor({
   };
 
   useEffect(() => {
-  const toolbar = document.querySelector(`.${styles.floatingToolbar}`);
-  const editor = document.querySelector(`.${styles.editorWrapper}`);
+    const toolbar = document.querySelector(`.${styles.floatingToolbar}`);
+    const editor = document.querySelector(`.${styles.editorWrapper}`);
 
-  if (!toolbar || !editor) return;
+    if (!toolbar || !editor || !window.visualViewport) return;
 
-  let initialHeight = window.innerHeight;
+    const updatePosition = () => {
+      const viewport = window.visualViewport;
 
-  const handleResize = () => {
-    const currentHeight = window.innerHeight;
+      if (viewport.height < window.innerHeight - 100) {
+        // Keyboard is open
+        const keyboardHeight = window.innerHeight - viewport.height;
 
-    // Keyboard is OPEN (height reduces by > 150px)
-    if (initialHeight - currentHeight > 150) {
-      const keyboardHeight = initialHeight - currentHeight;
+        toolbar.style.bottom = `${keyboardHeight + 10}px`;
+        editor.style.paddingBottom = `${keyboardHeight + 80}px`;
+      } else {
+        // Keyboard is closed
+        toolbar.style.bottom = `20px`;
+        editor.style.paddingBottom = `0px`;
+      }
+    };
 
-      toolbar.style.bottom = `${keyboardHeight + 20}px`;
-      editor.style.paddingBottom = `${keyboardHeight + 80}px`;
-    } else {
-      // Keyboard CLOSED
-      toolbar.style.bottom = `20px`;
-      editor.style.paddingBottom = `0px`;
-    }
-  };
+    window.visualViewport.addEventListener("resize", updatePosition);
+    window.visualViewport.addEventListener("scroll", updatePosition);
 
-  window.addEventListener("resize", handleResize);
-  return () => window.removeEventListener("resize", handleResize);
-}, []);
-
+    return () => {
+      window.visualViewport.removeEventListener("resize", updatePosition);
+      window.visualViewport.removeEventListener("scroll", updatePosition);
+    };
+  }, []);
 
   return (
     <div className={styles.editorWrapper}>
@@ -469,10 +471,7 @@ export default function CanvasEditor({
             <span className={styles.toolLabel}>Fonts</span>
           </button>
 
-          <div
-            className={styles.toolButton}
-            onClick={startTextEditing}
-          >
+          <div className={styles.toolButton} onClick={startTextEditing}>
             <span className={styles.iconKeyboard}>⌨</span>
             <span className={styles.toolLabel}>Edit</span>
           </div>
