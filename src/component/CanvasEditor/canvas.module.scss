@@ -43,9 +43,9 @@
     margin-top: -100px;
   }
   @media screen and (max-width: 440px) {
-    width: 85% !important;
-    height: 600px !important;
-    // object-fit: cover;
+    width: 100% !important;
+    height: 86% !important;
+    object-fit: cover;
   }
 }
 
@@ -86,7 +86,7 @@
     gap: 16px;
     padding: 0 16px;
     justify-content: center;
-    bottom: 220;
+    bottom: 180;
   }
 }
 

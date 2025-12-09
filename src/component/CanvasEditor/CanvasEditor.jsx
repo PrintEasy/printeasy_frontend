@@ -297,7 +297,7 @@ export default function CanvasEditor({
         fill: defaultFontColor,
         textAlign: "center",
         fontWeight: "normal",
-        splitByGrapheme: true,
+        splitByGrapheme: false,
         editable: true,
         lockMovementX: true,
         lockMovementY: true,
