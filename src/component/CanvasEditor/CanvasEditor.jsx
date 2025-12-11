@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ShoppingBag, Heart, Share2 } from "lucide-react";
+import { ChevronLeft, Heart } from "lucide-react";
 import styles from "./canvas.module.scss";
 import { COLORS, fontMap, FONTS, SIZES } from "@/constants";
 import { useRouter } from "next/navigation";
@@ -9,6 +9,11 @@ import share from "../../assessts/share.svg";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 import api from "@/axiosInstance/axiosInstance";
+import font from "../../assessts/font.svg";
+import letter from "../../assessts/letter1.svg";
+import family from "../../assessts/family.svg";
+import keyboard from "../../assessts/keyboard.svg";
+import line from "../../assessts/Line.svg";
 
 export default function CanvasEditor({
   product,
@@ -19,7 +24,6 @@ export default function CanvasEditor({
   const fabricCanvasRef = useRef(null);
   const activeTextRef = useRef(null);
   const scriptRef = useRef(null);
-  const [isMobile, setIsMobile] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedFont, setSelectedFont] = useState("Arial");
   const [selectedColor, setSelectedColor] = useState("#000000");
@@ -30,19 +34,13 @@ export default function CanvasEditor({
   const [canvasbackground, setCanvasBackground] = useState("");
   const router = useRouter();
   const { cartCount } = useCart();
-  const count = localStorage.getItem("count");
-
   const loadedFonts = new Set();
 
   const loadFont = async (font) => {
     if (!font) return;
-
     const family = typeof font === "string" ? font : font.family;
-    const url = typeof font === "string" ? font.downloadUrl : font.downloadUrl;
-
     if (!family || !font.downloadUrl) return;
-
-    if (loadedFonts.has(family)) return; 
+    if (loadedFonts.has(family)) return;
 
     try {
       const fontFace = new FontFace(
@@ -67,13 +65,11 @@ export default function CanvasEditor({
               "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
           },
         });
-
         setFonts(res?.data?.data);
       } catch (err) {
         console.error("Font fetch error:", err);
       }
     };
-
     fetchFonts();
   }, []);
 
@@ -108,7 +104,7 @@ export default function CanvasEditor({
     s.src =
       "https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js";
     s.async = true;
-    s.onload = () => initCanvas();
+    s.onload = initCanvas;
     document.body.appendChild(s);
     scriptRef.current = s;
 
@@ -124,6 +120,19 @@ export default function CanvasEditor({
     } catch (e) {}
     fabricCanvasRef.current = null;
     activeTextRef.current = null;
+  };
+
+  const focusTextarea = (textObj) => {
+    try {
+      const ta = textObj.hiddenTextarea;
+      if (!ta) return;
+      requestAnimationFrame(() => {
+        ta.focus({ preventScroll: true });
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      });
+    } catch (e) {
+      console.log("Textarea focus failed", e);
+    }
   };
 
   const initCanvas = () => {
@@ -160,36 +169,21 @@ export default function CanvasEditor({
 
     canvas.on("mouse:down", (opt) => {
       const target = opt.target;
-
       if (target && target.type === "textbox") {
         canvas.setActiveObject(target);
         activeTextRef.current = target;
-
-        // Update toolbar
         setSelectedFont(target.fontFamily || "Arial");
-        setSelectedColor(target.fill || "#000000");
+        setSelectedColor(target.fill || "#000");
         setSelectedSize(target.fontSize || 28);
 
         setTimeout(() => {
           target.enterEditing();
-
-          // Do NOT call selectAll()
-          // Do NOT set selection start/end
-          // → Fabric.js will automatically place cursor where user clicked!
-
-          const textarea = target.hiddenTextarea;
-          if (textarea) {
-            textarea.focus();
-          }
-
+          focusTextarea(target);
           setIsEditing(true);
           canvas.requestRenderAll();
-        }, 0);
-
+        }, 50);
         return;
       }
-
-      // Click outside
       canvas.discardActiveObject();
       canvas.renderAll();
       activeTextRef.current = null;
@@ -201,51 +195,29 @@ export default function CanvasEditor({
 
   const loadProductImages = (canvas) => {
     const shirtUrl = getRealImageUrl(product?.canvasImage);
-
     if (!shirtUrl) return;
-
     window.fabric.Image.fromURL(
       shirtUrl,
       (shirtImg) => {
         if (!shirtImg.width) return;
-
         const scale = (canvas.width / shirtImg.width) * 0.68;
-
-        shirtImg.set({
-          scaleX: scale,
-          scaleY: scale,
-          top: 125,
-          left: 100,
-        });
-
-        // Set as Fabric background
+        shirtImg.set({ scaleX: scale, scaleY: scale, top: 125, left: 100 });
         canvas.setBackgroundImage(shirtImg, () => {
           canvas.renderAll();
           addTextBelowIllustration(canvas, null);
-
-          // Extract background color
           const tempCanvas = document.createElement("canvas");
           tempCanvas.width = shirtImg.width;
           tempCanvas.height = shirtImg.height;
           const ctx = tempCanvas.getContext("2d");
           ctx.drawImage(shirtImg._element, 0, 0);
-
-          // Get pixel data of top-left corner (0,0)
           const pixelData = ctx.getImageData(0, 0, 1, 1).data;
           const bgColor = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`;
           setCanvasBackground(bgColor);
-          console.log("Background color:", typeof bgColor);
         });
       },
       { crossOrigin: "anonymous" }
     );
   };
-
-  // useEffect(() => {
-  //   Object.values(fontMap).forEach((font) => {
-  //     loadFont(font);
-  //   });
-  // }, []);
 
   const handleShare = async () => {
     const shareUrl = window.location.href;
@@ -329,8 +301,17 @@ export default function CanvasEditor({
           ta.style.fontFamily = text.fontFamily || "Arial";
           ta.style.color = text.fill || "#000";
           ta.style.fontSize = (text.fontSize || 28) + "px";
+
+          setTimeout(() => {
+            const scrollAmount = window.innerHeight * 0.1;
+            window.scrollTo({
+              top: window.scrollY + scrollAmount,
+              behavior: "smooth",
+            });
+          }, 300);
         }
       } catch (e) {}
+
       activeTextRef.current = text;
       setIsEditing(true);
     });
@@ -355,29 +336,16 @@ export default function CanvasEditor({
   const startTextEditing = () => {
     const canvas = fabricCanvasRef.current;
     if (!canvas) return;
-
     const textObj =
       activeTextRef.current ||
       canvas.getObjects().find((o) => o.type === "textbox");
-
     if (!textObj) return;
 
     canvas.setActiveObject(textObj);
-
-    // Allow fabric time to activate object then start editing
     setTimeout(() => {
       textObj.enterEditing();
-      textObj.selectAll();
+      focusTextarea(textObj);
       canvas.requestRenderAll();
-
-      // Force focus into hidden textarea (VERY IMPORTANT)
-      try {
-        const ta = textObj.hiddenTextarea;
-        if (ta) ta.focus();
-      } catch (err) {
-        console.log("Textarea focus failed", err);
-      }
-
       activeTextRef.current = textObj;
       setIsEditing(true);
     }, 50);
@@ -389,10 +357,8 @@ export default function CanvasEditor({
       activeTextRef.current ||
       canvas?.getObjects().find((o) => o.type === "textbox");
     if (!obj) return;
-
     obj.set(props);
     canvas?.requestRenderAll();
-
     try {
       const ta = obj.hiddenTextarea;
       if (ta) {
@@ -401,7 +367,6 @@ export default function CanvasEditor({
         if (props.fontSize) ta.style.fontSize = props.fontSize + "px";
       }
     } catch (e) {}
-
     setPrintingImg({
       textColor: obj.fill,
       fontFamily: obj.fontFamily,
@@ -413,7 +378,6 @@ export default function CanvasEditor({
   const onFontSelect = async (fontObj) => {
     await loadFont(fontObj);
     setSelectedFont(fontObj.family);
-
     applyToActiveText({ fontFamily: fontObj.family });
   };
 
@@ -430,54 +394,40 @@ export default function CanvasEditor({
   const handleWishlistClick = async () => {
     try {
       const res = await addToWishlist();
-      if (res?.status === 200) {
-        setIsWishlisted(true);
-      }
+      if (res?.status === 200) setIsWishlisted(true);
     } catch (err) {
       console.log("Failed to add wishlist:", err);
     }
   };
 
   useEffect(() => {
-    const toolbar = document.querySelector(`.${styles.floatingToolbar}`);
-    const editor = document.querySelector(`.${styles.editorWrapper}`);
-
-    if (!toolbar || !editor || !window.visualViewport) return;
-
-    const updatePosition = () => {
-      const viewport = window.visualViewport;
-
-      if (viewport.height < window.innerHeight - 100) {
-        // Keyboard is open
-        const keyboardHeight = window.innerHeight - viewport.height;
-
-        toolbar.style.bottom = `${keyboardHeight + 10}px`;
-        editor.style.paddingBottom = `${keyboardHeight + 80}px`;
-      } else {
-        // Keyboard is closed
-        toolbar.style.bottom = `20px`;
-        editor.style.paddingBottom = `0px`;
+    fonts.forEach(async (font) => {
+      if (!loadedFonts.has(font.family)) {
+        await loadFont(font);
+        await document.fonts.load(`16px ${font.family}`);
+        loadedFonts.add(font.family);
       }
-    };
+    });
+  }, [fonts]);
 
-    window.visualViewport.addEventListener("resize", updatePosition);
-    window.visualViewport.addEventListener("scroll", updatePosition);
-
-    return () => {
-      window.visualViewport.removeEventListener("resize", updatePosition);
-      window.visualViewport.removeEventListener("scroll", updatePosition);
-    };
-  }, []);
+  const prevHeight = useRef(window.innerHeight);
 
   useEffect(() => {
-  fonts.forEach(async (font) => {
-    if (!loadedFonts.has(font.family)) {
-      await loadFont(font);
-      await document.fonts.load(`16px ${font.family}`);
-      loadedFonts.add(font.family);
-    }
-  });
-}, [fonts]);
+    const handleResize = () => {
+      const currentHeight = window.innerHeight;
+
+      // Keyboard opened (height decreases sharply)
+      if (prevHeight.current - currentHeight > 150) {
+        const scrollAmount = window.innerHeight * 0.8; // 8%
+        window.scrollBy({ top: scrollAmount, behavior: "smooth" });
+      }
+
+      prevHeight.current = currentHeight;
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <div className={styles.editorWrapper}>
@@ -523,7 +473,7 @@ export default function CanvasEditor({
               activeTab === "size" ? styles.activeTool : ""
             }`}
           >
-            <span className={styles.iconAa}>Aa</span>
+            <Image src={letter} alt="font" />
             <span className={styles.toolLabel}>Font Size</span>
           </button>
 
@@ -533,7 +483,7 @@ export default function CanvasEditor({
               activeTab === "color" ? styles.activeTool : ""
             }`}
           >
-            <span className={styles.iconColorA}>A</span>
+            <Image src={font} alt="font" />
             <span className={styles.toolLabel}>Colour</span>
           </button>
 
@@ -543,12 +493,12 @@ export default function CanvasEditor({
               activeTab === "font" ? styles.activeTool : ""
             }`}
           >
-            <span className={styles.iconF}>f</span>
+            <Image src={family} alt="font" />
             <span className={styles.toolLabel}>Fonts</span>
           </button>
 
           <div className={styles.toolButton} onClick={startTextEditing}>
-            <span className={styles.iconKeyboard}>⌨</span>
+            <Image src={keyboard} alt="font" />
             <span className={styles.toolLabel}>Edit</span>
           </div>
 
@@ -572,6 +522,7 @@ export default function CanvasEditor({
                     style={{ fontFamily: font.family }}
                   >
                     {font.family}
+                    <Image src={line} alt="line" />
                   </button>
                 ))}
               </div>

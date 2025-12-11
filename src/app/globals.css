@@ -5,6 +5,11 @@
   font-family: 'Poppins', sans-serif;
 }
 
+html, body {
+  height: 100%;
+  height: -webkit-fill-available;
+}
+
 @media (max-width: 768px) {
   .navbar-wrapper {
     display: none !important;
