@@ -1,28 +1,20 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useEffect, useRef } from "react";
 import styles from "./HeroWords.module.scss";
-import { Poppins, Montserrat, Raleway, Rubik, Nunito } from "next/font/google";
+import {
+  Poppins,
+  Montserrat,
+  Raleway,
+  Rubik,
+  Nunito,
+} from "next/font/google";
 
-// Load fonts
-const poppins = Poppins({ weight: ["400", "600"], subsets: ["latin"] });
+const poppins = Poppins({ weight: ["400", "600", "800"], subsets: ["latin"] });
 const montserrat = Montserrat({ weight: ["500", "700"], subsets: ["latin"] });
 const raleway = Raleway({ weight: ["500"], subsets: ["latin"] });
 const rubik = Rubik({ weight: ["500", "700"], subsets: ["latin"] });
 const nunito = Nunito({ weight: ["600"], subsets: ["latin"] });
-
-const words = [
-  "Be Brave. Be Bold.",
-  "My Hero",
-  "Little Hero",
-  "My Power. My Rules.",
-  "Born to Save the Day",
-  "Power Mode On",
-  "Future Avenger",
-  "I’ve Got Superpowers",
-  "Future Avenger",
-  "Little Hero",
-];
 
 const fonts = [
   poppins.className,
@@ -32,72 +24,86 @@ const fonts = [
   nunito.className,
 ];
 
-const HeroWords = () => {
-  const randomStyles = useMemo(() => {
-    const placed = [];
+const words = [
+  "Be Brave. Be Bold.",
+  "My Hero",
+  "Little Hero",
+  "Future Avenger",
+  "Born to Shine",
+  "Power Mode On",
+  "Super Style",
+  "Boss Vibes",
+  "Cool Kid",
+  "Legend Mode",
+];
 
-    const getNonOverlappingPosition = () => {
-      let top, left;
-      let tries = 0;
-      const minDistance = 80;
+const colors = [
+  "rgba(20,30,70,0.9)",
+  "rgba(220,50,50,0.8)",
+  "rgba(240,180,20,0.9)",
+  "rgba(0,0,0,0.7)",
+  "rgba(50,150,250,0.8)",
+];
 
-      while (tries < 200) {
-        top = Math.random() * 80;
-        left = Math.random() * 80;
+export default function HeroWords() {
+  const containerRef = useRef(null);
 
-        const overlap = placed.some(
-          (p) => Math.abs(p.top - top) < 10 && Math.abs(p.left - left) < 15
-        );
+  useEffect(() => {
+    const container = containerRef.current;
+    const isMobile = window.innerWidth < 768;
 
-        if (!overlap) {
-          placed.push({ top, left });
-          break;
-        }
-        tries++;
-      }
+    const initialCount = isMobile ? 40 : 80;
+    const spawnSpeed = isMobile ? 400 : 200;
 
-      return { top: `${top}%`, left: `${left}%` };
+    const spawnWord = (preload = false) => {
+      const span = document.createElement("span");
+      span.className = styles.word;
+
+      const z = Math.random() * 1200 - 1000;
+      const spread = 1 + Math.abs(z) / 600;
+      let x = (Math.random() * 100 - 50) * spread + 50;
+      x = Math.max(-50, Math.min(150, x));
+
+      const duration = 20 - ((z + 1000) / 1200) * 10 + Math.random() * 5;
+      const delay = preload ? -(Math.random() * (duration - 2)) : 0;
+
+      const opacity = z < -500 ? 0.4 : z < -200 ? 0.6 : 1;
+      const blur = z < -500 ? (isMobile ? 0.5 : 2) : z < -200 ? 0.5 : 0;
+
+      span.innerText = words[Math.floor(Math.random() * words.length)];
+      span.style.color = colors[Math.floor(Math.random() * colors.length)];
+      span.style.fontSize = `${Math.random() * (isMobile ? 16 : 40) + (isMobile ? 12 : 22)}px`;
+      span.style.fontWeight = z < -500 ? 400 : 800;
+      span.style.filter = blur ? `blur(${blur}px)` : "none";
+
+      span.style.setProperty("--x", `${x}vw`);
+      span.style.setProperty("--z", `${z}px`);
+      span.style.setProperty("--opacity", opacity);
+      span.style.animationDuration = `${duration}s`;
+      span.style.animationDelay = `${delay}s`;
+
+      span.classList.add(fonts[Math.floor(Math.random() * fonts.length)]);
+      container.appendChild(span);
+
+      setTimeout(() => {
+        span.remove();
+      }, (duration + Math.abs(delay)) * 1000);
     };
 
-    return words.map(() => {
-      const { top, left } = getNonOverlappingPosition();
-      return {
-        top,
-        left,
-        fontSize: `${Math.random() * 1.2 + 1}rem`,
-        animationDuration: `${Math.random() * 5 + 6}s`,
-        animationDelay: `${Math.random() * 2}s`,
-        fontClass: fonts[Math.floor(Math.random() * fonts.length)],
-        direction: Math.random() > 0.5 ? 1 : -1,
-      };
-    });
+    // Pre-fill screen
+    for (let i = 0; i < initialCount; i++) {
+      spawnWord(true);
+    }
+
+    const interval = setInterval(() => spawnWord(false), spawnSpeed);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
-    <>
-      <main className={styles.heroword_main_wrap}>
-        <h1>YOUR WORDS, YOUR STYLE</h1>
-        <div className={styles.container}>
-          {words.map((word, i) => (
-            <span
-              key={i}
-              className={`${styles.word} ${randomStyles[i].fontClass}`}
-              style={{
-                top: randomStyles[i].top,
-                left: randomStyles[i].left,
-                fontSize: randomStyles[i].fontSize,
-                animationDuration: randomStyles[i].animationDuration,
-                animationDelay: randomStyles[i].animationDelay,
-                "--direction": randomStyles[i].direction,
-              }}
-            >
-              {word}
-            </span>
-          ))}
-        </div>
-      </main>
-    </>
+    <main className={styles.heroword_main_wrap}>
+      <h1>YOUR WORDS, YOUR STYLE</h1>
+      <div ref={containerRef} className={styles.container} />
+    </main>
   );
-};
-
-export default HeroWords;
+}

@@ -122,14 +122,70 @@ export default function CanvasEditor({
     activeTextRef.current = null;
   };
 
+  // Detect iOS device
+  const isIOS = () => {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  };
+
   const focusTextarea = (textObj) => {
     try {
       const ta = textObj.hiddenTextarea;
       if (!ta) return;
-      requestAnimationFrame(() => {
-        ta.focus({ preventScroll: true });
-        ta.setSelectionRange(ta.value.length, ta.value.length);
-      });
+      
+      // Ensure textarea is visible for iOS (not display: none)
+      if (isIOS()) {
+        // Make sure textarea is accessible but off-screen
+        // iOS requires the element to be in the DOM and not display:none
+        ta.style.position = 'fixed';
+        ta.style.left = '-9999px';
+        ta.style.top = '0';
+        ta.style.width = '1px';
+        ta.style.height = '1px';
+        ta.style.opacity = '0';
+        ta.style.pointerEvents = 'none';
+        ta.style.zIndex = '-1';
+        ta.readOnly = false;
+        ta.removeAttribute('readonly');
+        
+        // Ensure textarea has proper attributes for iOS
+        if (!ta.hasAttribute('inputmode')) {
+          ta.setAttribute('inputmode', 'text');
+        }
+        if (!ta.hasAttribute('autocapitalize')) {
+          ta.setAttribute('autocapitalize', 'off');
+        }
+        if (!ta.hasAttribute('autocorrect')) {
+          ta.setAttribute('autocorrect', 'off');
+        }
+        
+        // For iOS, we need to trigger focus synchronously from user interaction
+        // Use click event to ensure keyboard opens
+        const clickEvent = new MouseEvent('click', {
+          view: window,
+          bubbles: true,
+          cancelable: true,
+        });
+        ta.dispatchEvent(clickEvent);
+        
+        // Focus immediately (synchronously) - critical for iOS
+        ta.focus();
+        
+        // Set selection after a microtask to ensure focus is established
+        setTimeout(() => {
+          try {
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+          } catch (e) {
+            // Some iOS versions don't support setSelectionRange on hidden textareas
+          }
+        }, 0);
+      } else {
+        // Android and desktop - use requestAnimationFrame
+        requestAnimationFrame(() => {
+          ta.focus({ preventScroll: true });
+          ta.setSelectionRange(ta.value.length, ta.value.length);
+        });
+      }
     } catch (e) {
       console.log("Textarea focus failed", e);
     }
@@ -167,21 +223,35 @@ export default function CanvasEditor({
     canvas.on("selection:updated", handleSelection);
     canvas.on("selection:cleared", clearSelection);
 
-    canvas.on("mouse:down", (opt) => {
-      const target = opt.target;
-      if (target && target.type === "textbox") {
-        canvas.setActiveObject(target);
-        activeTextRef.current = target;
-        setSelectedFont(target.fontFamily || "Arial");
-        setSelectedColor(target.fill || "#000");
-        setSelectedSize(target.fontSize || 28);
+    const handleTextSelection = (target) => {
+      if (!target || target.type !== "textbox") return;
+      
+      canvas.setActiveObject(target);
+      activeTextRef.current = target;
+      setSelectedFont(target.fontFamily || "Arial");
+      setSelectedColor(target.fill || "#000");
+      setSelectedSize(target.fontSize || 28);
 
+      // For iOS, enter editing immediately to maintain user interaction chain
+      if (isIOS()) {
+        target.enterEditing();
+        focusTextarea(target);
+        setIsEditing(true);
+        canvas.requestRenderAll();
+      } else {
         setTimeout(() => {
           target.enterEditing();
           focusTextarea(target);
           setIsEditing(true);
           canvas.requestRenderAll();
         }, 50);
+      }
+    };
+
+    canvas.on("mouse:down", (opt) => {
+      const target = opt.target;
+      if (target && target.type === "textbox") {
+        handleTextSelection(target);
         return;
       }
       canvas.discardActiveObject();
@@ -189,6 +259,21 @@ export default function CanvasEditor({
       activeTextRef.current = null;
       setIsEditing(false);
     });
+
+    // Add touch support for iOS
+    if (isIOS()) {
+      canvas.on("touch:start", (opt) => {
+        const target = opt.target;
+        if (target && target.type === "textbox") {
+          handleTextSelection(target);
+          return;
+        }
+        canvas.discardActiveObject();
+        canvas.renderAll();
+        activeTextRef.current = null;
+        setIsEditing(false);
+      });
+    }
 
     loadProductImages(canvas);
   };
@@ -255,7 +340,7 @@ export default function CanvasEditor({
     }
 
     const MAX_LINES = 2;
-    const MAX_CHARS_PER_LINE = 24;
+    const MAX_CHARS_PER_LINE = 30;
 
     const truncateText = (text) => {
       const lines = text.split("\n");
@@ -331,6 +416,13 @@ export default function CanvasEditor({
     text.on("editing:entered", () => {
       // Initial enforcement when user starts typing
       enforceLimits();
+      
+      // Ensure textarea is properly configured for iOS
+      if (isIOS()) {
+        setTimeout(() => {
+          focusTextarea(text);
+        }, 10);
+      }
     });
 
     // Sync printing data
@@ -347,8 +439,18 @@ export default function CanvasEditor({
 
     canvas.add(text);
     canvas.setActiveObject(text);
-    text.enterEditing();
-    canvas.requestRenderAll();
+    
+    // For iOS, delay entering editing mode to ensure canvas is fully rendered
+    if (isIOS()) {
+      setTimeout(() => {
+        text.enterEditing();
+        focusTextarea(text);
+        canvas.requestRenderAll();
+      }, 100);
+    } else {
+      text.enterEditing();
+      canvas.requestRenderAll();
+    }
   };
 
   const startTextEditing = () => {
@@ -360,13 +462,23 @@ export default function CanvasEditor({
     if (!textObj) return;
 
     canvas.setActiveObject(textObj);
-    setTimeout(() => {
+    
+    // For iOS, enter editing immediately to maintain user interaction chain
+    if (isIOS()) {
       textObj.enterEditing();
       focusTextarea(textObj);
       canvas.requestRenderAll();
       activeTextRef.current = textObj;
       setIsEditing(true);
-    }, 50);
+    } else {
+      setTimeout(() => {
+        textObj.enterEditing();
+        focusTextarea(textObj);
+        canvas.requestRenderAll();
+        activeTextRef.current = textObj;
+        setIsEditing(true);
+      }, 50);
+    }
   };
 
   const applyToActiveText = (props) => {
