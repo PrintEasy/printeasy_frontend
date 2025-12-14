@@ -38,7 +38,7 @@ export default function CanvasEditor({
 
   // Fixed container dimensions
   const CONTAINER_WIDTH = 175;
-  const CONTAINER_HEIGHT = 70;
+  const CONTAINER_HEIGHT = 65;
 
   const loadFont = async (font) => {
     if (!font) return;
@@ -299,67 +299,65 @@ export default function CanvasEditor({
       await document.fonts.ready;
     }
 
-const forceSmartWrap = () => {
-  const ctx = canvas.getContext();
-  ctx.font = `${text.fontSize}px ${text.fontFamily}`;
+    const forceSmartWrap = () => {
+      const ctx = canvas.getContext();
+      ctx.font = `${text.fontSize}px ${text.fontFamily}`;
 
-  const maxWidth = CONTAINER_WIDTH - 16;
-  const lines = text.text.split("\n");
-  let result = [];
-  let cursorShift = 0;
+      const maxWidth = CONTAINER_WIDTH - 16;
+      const lines = text.text.split("\n");
+      let result = [];
+      let cursorShift = 0;
 
-  lines.forEach((line) => {
-    let words = line.split(" ");
-    let currentLine = "";
+      lines.forEach((line) => {
+        let words = line.split(" ");
+        let currentLine = "";
 
-    words.forEach((word, index) => {
-      const testLine =
-        currentLine.length === 0 ? word : currentLine + " " + word;
+        words.forEach((word, index) => {
+          const testLine =
+            currentLine.length === 0 ? word : currentLine + " " + word;
 
-      const width = ctx.measureText(testLine).width;
+          const width = ctx.measureText(testLine).width;
 
-      // ✅ Word fits → keep going
-      if (width <= maxWidth) {
-        currentLine = testLine;
-        return;
-      }
+          // ✅ Word fits → keep going
+          if (width <= maxWidth) {
+            currentLine = testLine;
+            return;
+          }
 
-      // ✅ Word does NOT fit, but line has content → move word to next line
-      if (ctx.measureText(word).width <= maxWidth) {
+          // ✅ Word does NOT fit, but line has content → move word to next line
+          if (ctx.measureText(word).width <= maxWidth) {
+            result.push(currentLine);
+            currentLine = word;
+            return;
+          }
+
+          // ❌ Single word too long → break by character
+          let chunk = "";
+          for (let char of word) {
+            const testChunk = chunk + char;
+            if (ctx.measureText(testChunk).width > maxWidth) {
+              result.push(chunk);
+              chunk = char;
+            } else {
+              chunk = testChunk;
+            }
+          }
+
+          currentLine = chunk;
+        });
+
         result.push(currentLine);
-        currentLine = word;
-        return;
+      });
+
+      const newText = result.join("\n");
+
+      if (newText !== text.text) {
+        const cursorPos = text.selectionStart;
+        text.text = newText;
+        text.selectionStart = cursorPos + cursorShift;
+        text.selectionEnd = text.selectionStart;
       }
-
-      // ❌ Single word too long → break by character
-      let chunk = "";
-      for (let char of word) {
-        const testChunk = chunk + char;
-        if (ctx.measureText(testChunk).width > maxWidth) {
-          result.push(chunk);
-          chunk = char;
-        } else {
-          chunk = testChunk;
-        }
-      }
-
-      currentLine = chunk;
-    });
-
-    result.push(currentLine);
-  });
-
-  const newText = result.join("\n");
-
-  if (newText !== text.text) {
-    const cursorPos = text.selectionStart;
-    text.text = newText;
-    text.selectionStart = cursorPos + cursorShift;
-    text.selectionEnd = text.selectionStart;
-  }
-};
-
-
+    };
 
     const PLACEHOLDER_TEXT = "YOUR TEXT HERE";
 
@@ -383,8 +381,8 @@ const forceSmartWrap = () => {
         lockScalingX: true,
         lockScalingY: true,
         hasControls: false,
-        hasBorders: true,
-        borderColor: "#ddd",
+        hasBorders: false,
+        borderColor: "transparent",
         selectable: true,
         dynamicMinWidth: CONTAINER_WIDTH,
         minWidth: CONTAINER_WIDTH,
@@ -518,59 +516,70 @@ const forceSmartWrap = () => {
     // Scroll logic (extra upward)
     // ================================
     const updateScrollToCursor = () => {
-  const LINE_HEIGHT = text.fontSize * text.lineHeight;
-      const PADDING_TOP = 8; // textarea padding
-      const VISIBLE_LINES = Math.floor(
-        (CONTAINER_HEIGHT - PADDING_TOP * 2) / LINE_HEIGHT
-  );
+      const LINE_HEIGHT = text.fontSize * text.lineHeight;
+      const PADDING_TOP = 8;
 
-      const cursorLine = text.get2DCursorLocation().lineIndex;
+      const visibleHeight = CONTAINER_HEIGHT - PADDING_TOP * 2;
+      const VISIBLE_LINES = Math.floor(visibleHeight / LINE_HEIGHT);
 
-      // 🔒 Lock cursor position to a fixed line (e.g. 3rd visible line)
-      const LOCKED_LINE_INDEX = 1; // 0-based (2 = 3rd line)
+      const maxWidth = CONTAINER_WIDTH - 16; // padding
+      const lines = text._textLines || [];
 
-      const targetScrollLine = cursorLine - LOCKED_LINE_INDEX;
+      const totalLines = lines.length;
 
-      // 🔥 Convert line → pixel scroll
-      const nextScrollOffset = targetScrollLine * LINE_HEIGHT;
+      // ✅ If text fits → no scroll
+      if (totalLines <= VISIBLE_LINES) {
+        scrollOffset = 0;
+        return;
+      }
 
-      scrollOffset = Math.max(0, nextScrollOffset);
-};
+      // 🔥 CHECK IF LAST VISIBLE LINE IS ACTUALLY FULL
+      const ctx = fabricCanvasRef.current.getContext();
+      ctx.font = `${text.fontSize}px ${text.fontFamily}`;
 
+      const lastVisibleLine = lines[VISIBLE_LINES - 1].join("");
+      const lastLineWidth = ctx.measureText(lastVisibleLine).width;
 
-    // ================================
-    // Handle typing
-    // ================================
+      // ❌ Don't scroll until width is FULL
+      if (lastLineWidth < maxWidth - 2) {
+        scrollOffset = 0;
+        return;
+      }
+
+      // ✅ Scroll by exactly one line
+      const hiddenLines = totalLines - VISIBLE_LINES;
+      scrollOffset = hiddenLines * LINE_HEIGHT;
+    };
+
     const handleTextChange = () => {
-  if (text.text.trim() === "") {
-    text.__isPlaceholder = true;
-    text.set({ text: text.__placeholder, fill: "#999" });
-    scrollOffset = 0;
-    canvas.requestRenderAll();
-    styleTextarea();
-    moveCursorToEnd();
-    return;
-  }
+      if (text.text.trim() === "") {
+        text.__isPlaceholder = true;
+        text.set({ text: text.__placeholder, fill: "#999" });
+        scrollOffset = 0;
+        canvas.requestRenderAll();
+        styleTextarea();
+        moveCursorToEnd();
+        return;
+      }
 
-  if (text.__isPlaceholder) {
-    text.__isPlaceholder = false;
-    text.set({ fill: defaultFontColor });
-  }
+      if (text.__isPlaceholder) {
+        text.__isPlaceholder = false;
+        text.set({ fill: defaultFontColor });
+      }
 
-  // 🔥 Correct wrapping
-  forceSmartWrap();
+      // 🔥 Correct wrapping
+      forceSmartWrap();
 
-  // 🔥 Update scroll AFTER wrap
-  updateScrollToCursor();
+      // 🔥 Update scroll AFTER wrap
+      updateScrollToCursor();
 
-  text._clearCache();
-  lockDimensions();
-  canvas.requestRenderAll();
-  styleTextarea();
+      text._clearCache();
+      lockDimensions();
+      canvas.requestRenderAll();
+      styleTextarea();
 
-  requestAnimationFrame(moveCursorToEnd);
-};
-
+      requestAnimationFrame(moveCursorToEnd);
+    };
 
     text.on("changed", handleTextChange);
     text.on("modified", handleTextChange);
