@@ -1,23 +1,55 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import styles from "./shirtEditor.module.scss";
 import Image from "next/image";
 import api from "@/axiosInstance/axiosInstance";
+import { toPng } from "html-to-image";
 
-const ShirtEditor = ({ product }) => {
+const ShirtEditor = forwardRef(({ product }, ref) => {
   const [text, setText] = useState(product?.presetText || "");
   const [isEditing, setIsEditing] = useState(false);
   const [fonts, setFonts] = useState([]);
-  const [scrollPos, setScrollPos] = useState(0); // Track scroll position
-  
+  const [scrollPos, setScrollPos] = useState(0);
+
   const inputRef = useRef(null);
   const viewRef = useRef(null);
+  const editorRef = useRef(null);
+
+ useImperativeHandle(ref, () => ({
+  captureImage: async () => {
+    if (!editorRef.current) return null;
+
+    try {
+      // 1. Wait a tiny bit for the font/image to settle
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      // 2. Perform the capture
+      const dataUrl = await toPng(editorRef.current, {
+        cacheBust: true,      
+        pixelRatio: 2,       
+        skipFonts: false,     
+      });
+
+      return dataUrl;
+    } catch (err) {
+      console.error("Capture process failed:", err);
+      return null;
+    }
+  },
+}));
 
   useEffect(() => {
     const fetchFonts = async () => {
       try {
         const res = await api.get("/v2/font?activeOnly=true", {
           headers: {
-            "x-api-key": "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
+            "x-api-key":
+              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
           },
         });
         setFonts(res?.data?.data || []);
@@ -27,7 +59,6 @@ const ShirtEditor = ({ product }) => {
     };
     fetchFonts();
   }, []);
-
 
   useEffect(() => {
     if (fonts.length > 0) {
@@ -39,12 +70,14 @@ const ShirtEditor = ({ product }) => {
         document.head.appendChild(styleElement);
       }
       const fontFaceRules = fonts
-        .map((font) => `@font-face { font-family: '${font.family}'; src: url('${font.downloadUrl}') format('truetype'); font-display: swap; }`)
+        .map(
+          (font) =>
+            `@font-face { font-family: '${font.family}'; src: url('${font.downloadUrl}') format('truetype'); font-display: swap; }`
+        )
         .join("\n");
       styleElement.innerHTML = fontFaceRules;
     }
   }, [fonts]);
-
 
   const handleBlur = () => {
     if (inputRef.current) {
@@ -53,14 +86,12 @@ const ShirtEditor = ({ product }) => {
     setIsEditing(false);
   };
 
-  
   useEffect(() => {
     if (!isEditing && viewRef.current) {
       viewRef.current.scrollTop = scrollPos;
     }
   }, [isEditing, scrollPos]);
 
- 
   useEffect(() => {
     if (isEditing && inputRef.current) {
       inputRef.current.scrollTop = inputRef.current.scrollHeight;
@@ -81,15 +112,18 @@ const ShirtEditor = ({ product }) => {
   };
 
   return (
-    <section className={styles.img_main_wrap}>
+    <section className={styles.img_main_wrap} ref={editorRef}>
       <div className={styles.img_wrap}>
-        <Image
+        <img
           src={product?.canvasImage || "/placeholder.png"}
           alt="product"
           width={500}
           height={600}
           className={styles.mainImage}
           priority
+          unoptimized
+          crossOrigin="anonymous"
+          loader={({ src }) => src}
         />
 
         {isEditing ? (
@@ -116,6 +150,6 @@ const ShirtEditor = ({ product }) => {
       </div>
     </section>
   );
-};
+});
 
 export default ShirtEditor;
