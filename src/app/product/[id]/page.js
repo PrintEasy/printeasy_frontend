@@ -20,6 +20,7 @@ import AddToCartSuccessSheet from "@/component/AddToCartSuccessSheet/AddToCartSu
 import { useCart } from "@/context/CartContext";
 import bag from "../../../assessts/bag.svg";
 import share from "../../../assessts/share.svg";
+import ShirtEditor from "@/component/shirtEditor/ShirtEditor";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -280,12 +281,7 @@ const ProductDetails = () => {
         <ToastContainer position="top-right" autoClose={2000} />
 
         {product?.isCustomizable ? (
-          <CanvasEditor
-            product={product}
-            onDesignChange={handleDesignChange}
-            setPrintingImg={setPrintingImg}
-            addToWishlist={addToWishlist}
-          />
+          <ShirtEditor product={product}/>
         ) : (
           <>
             <div className={styles.back} onClick={() => router.back()}>
@@ -327,10 +323,13 @@ const ProductDetails = () => {
           </>
         )}
 
-        <div
+        {/* <div
           className={`${styles.infoSection} ${
             !isCustomizable && styles.infoSection_img
           }`}
+        > */}
+           <div
+          className={styles.infoSection_img}
         >
           {/* <p className={styles.subtitle}>{product?.subtitle}</p> */}
           <div className={styles.priceSection}>
