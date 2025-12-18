@@ -360,13 +360,10 @@ const ProductDetails = () => {
           </>
         )}
 
-        {/* <div
+        <div
           className={`${styles.infoSection} ${
             !isCustomizable && styles.infoSection_img
           }`}
-        > */}
-           <div
-          className={styles.infoSection_img}
         >
           {/* <p className={styles.subtitle}>{product?.subtitle}</p> */}
           <div className={styles.priceSection}>
