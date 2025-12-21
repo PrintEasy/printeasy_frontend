@@ -19,8 +19,7 @@ const OrderSuccessPage = () => {
       const txStatus = searchParams.get("txStatus");
       if (!txStatus) {
         // If no payment info, redirect to home/cart
-        // router.push("/");
-        alert("payment unkow")
+        router.push("/");
         return;
       }
 
