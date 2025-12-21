@@ -29,10 +29,14 @@ const ShirtEditor = forwardRef(({ product }, ref) => {
   const [activeTab, setActiveTab] = useState("font");
   const [imageLoaded, setImageLoaded] = useState(false);
   const [scrollPos, setScrollPos] = useState(0);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+  const loadedFontsRef = useRef(new Set());
 
   const inputRef = useRef(null);
   const viewRef = useRef(null);
   const editorRef = useRef(null);
+
+  const isEditorReady = imageLoaded && fontsLoaded;
 
   /* ================= INIT FROM PRODUCT ================= */
   useEffect(() => {
@@ -87,25 +91,40 @@ const ShirtEditor = forwardRef(({ product }, ref) => {
   useEffect(() => {
     if (!fonts.length) return;
 
-    const styleId = "dynamic-fonts";
-    let styleTag = document.getElementById(styleId);
+    let isCancelled = false;
 
-    if (!styleTag) {
-      styleTag = document.createElement("style");
-      styleTag.id = styleId;
-      document.head.appendChild(styleTag);
-    }
+    const loadFonts = async () => {
+      try {
+        const fontPromises = fonts.map((font) => {
+          if (loadedFontsRef.current.has(font.family)) {
+            return Promise.resolve();
+          }
 
-    styleTag.innerHTML = fonts
-      .map(
-        (f) =>
-          `@font-face {
-            font-family: '${f.family}';
-            src: url('${f.downloadUrl}') format('truetype');
-            font-display: swap;
-          }`
-      )
-      .join("\n");
+          const fontFace = new FontFace(
+            font.family,
+            `url(${font.downloadUrl})`
+          );
+
+          return fontFace.load().then((loaded) => {
+            document.fonts.add(loaded);
+            loadedFontsRef.current.add(font.family);
+          });
+        });
+
+        await Promise.all(fontPromises);
+
+        if (!isCancelled) setFontsLoaded(true);
+      } catch (err) {
+        console.error("Font loading failed", err);
+        setFontsLoaded(true); // fail gracefully
+      }
+    };
+
+    loadFonts();
+
+    return () => {
+      isCancelled = true;
+    };
   }, [fonts]);
 
   /* ================= TEXT EDIT HANDLERS ================= */
@@ -182,26 +201,28 @@ const ShirtEditor = forwardRef(({ product }, ref) => {
         />
 
         {/* TEXT LAYER */}
-        {isEditing ? (
-          <textarea
-            ref={inputRef}
-            className={`${styles.presetText} ${styles.editInput}`}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            style={dynamicStyles}
-          />
-        ) : (
-          <div
-            ref={viewRef}
-            className={styles.presetText}
-            onClick={() => setIsEditing(true)}
-            style={dynamicStyles}
-          >
-            {text.trim() || "Your Text Here"}
-          </div>
-        )}
+        {/* TEXT LAYER */}
+        {isEditorReady &&
+          (isEditing ? (
+            <textarea
+              ref={inputRef}
+              className={`${styles.presetText} ${styles.editInput}`}
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
+              style={dynamicStyles}
+            />
+          ) : (
+            <div
+              ref={viewRef}
+              className={styles.presetText}
+              onClick={() => setIsEditing(true)}
+              style={dynamicStyles}
+            >
+              {text.trim() || "Your Text Here"}
+            </div>
+          ))}
 
         {isEditing && (
           <div className={styles.floatingToolbar}>

@@ -13,6 +13,8 @@ import api from "@/axiosInstance/axiosInstance";
 import { db } from "@/lib/db";
 import Cookies from "js-cookie";
 import { load } from "@cashfreepayments/cashfree-js";
+import DynamicModal from "@/component/Modal/Modal";
+import LoginForm from "../signup/LogIn/LoginForm";
 
 const Cart = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -22,6 +24,18 @@ const Cart = () => {
   const [cashfree, setCashfree] = useState(null);
   const router = useRouter();
   const accessToken = Cookies.get("idToken");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
+
+  // useEffect(() => {
+  //   const token = Cookies.get("idToken");
+  //   setIsLoggedIn(!!token);
+  // }, []);
+
+  const handleContinue = () => {
+    setIsLoginModalVisible(false);
+    setIsLoggedIn(true);
+  };
 
   useEffect(() => {
     const initCashfree = async () => {
@@ -102,6 +116,13 @@ const Cart = () => {
 
   // ----------------- Cashfree Integration -----------------
   const handlePayNow = async () => {
+    const token = Cookies.get("idToken");
+
+    if (!token) {
+      setIsLoginModalVisible(true);
+      return;
+    }
+
     if (cartItems.length === 0) {
       toast.warning("Your cart is empty!");
       return;
@@ -282,6 +303,17 @@ const Cart = () => {
               />
             </div>
           </div>
+
+          <DynamicModal
+            open={isLoginModalVisible}
+            onClose={() => setIsLoginModalVisible(false)}
+          >
+            <LoginForm
+              onContinue={handleContinue}
+              setIsLoginModalVisible={setIsLoginModalVisible}
+              setIsLoggedIn={setIsLoggedIn}
+            />
+          </DynamicModal>
         </>
       ) : (
         <NoResult
