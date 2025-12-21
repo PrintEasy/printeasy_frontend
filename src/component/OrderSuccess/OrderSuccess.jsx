@@ -70,7 +70,7 @@ export default function OrderSuccess() {
   const checkPaymentStatus = async (orderId, cashfreeOrderId) => {
     try {
       const res = await api.post(
-        "/v1/payments/status", // Note: plural "payments"
+        "/v1/payment/status", // Note: plural "payments"
         {
           cashfreeOrderId: cashfreeOrderId,
           orderId: orderId,
