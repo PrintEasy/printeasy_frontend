@@ -36,8 +36,6 @@ const ShirtEditor = forwardRef(({ product }, ref) => {
   const viewRef = useRef(null);
   const editorRef = useRef(null);
 
-  const isEditorReady = imageLoaded && fontsLoaded;
-
   /* ================= INIT FROM PRODUCT ================= */
   useEffect(() => {
     if (product) {
@@ -54,7 +52,8 @@ const ShirtEditor = forwardRef(({ product }, ref) => {
       if (!editorRef.current) return null;
 
       try {
-        await new Promise((r) => setTimeout(r, 100));
+        // Wait a small buffer for any pending font swaps
+        await new Promise((r) => setTimeout(r, 150));
 
         const dataUrl = await toPng(editorRef.current, {
           cacheBust: true,
@@ -112,19 +111,15 @@ const ShirtEditor = forwardRef(({ product }, ref) => {
         });
 
         await Promise.all(fontPromises);
-
         if (!isCancelled) setFontsLoaded(true);
       } catch (err) {
         console.error("Font loading failed", err);
-        setFontsLoaded(true); // fail gracefully
+        if (!isCancelled) setFontsLoaded(true); 
       }
     };
 
     loadFonts();
-
-    return () => {
-      isCancelled = true;
-    };
+    return () => { isCancelled = true; };
   }, [fonts]);
 
   /* ================= TEXT EDIT HANDLERS ================= */
@@ -169,11 +164,9 @@ const ShirtEditor = forwardRef(({ product }, ref) => {
   /* ================= DYNAMIC STYLES ================= */
   const dynamicStyles = {
     color: selectedColor,
-    fontFamily: `'${selectedFont}', sans-serif`,
+    fontFamily: `'${selectedFont}', Arial, sans-serif`, // Added fallbacks for instant render
     fontSize: `${selectedSize}px`,
   };
-
-  console.log(imageLoaded, "oopopopopccxxxvvvv");
 
   return (
     <section className={styles.img_main_wrap} ref={editorRef}>
@@ -193,17 +186,15 @@ const ShirtEditor = forwardRef(({ product }, ref) => {
           priority
           unoptimized
           onLoadingComplete={() => setImageLoaded(true)}
-          // Ensure the image doesn't pop in abruptly
           style={{
             opacity: imageLoaded ? 1 : 0,
-            transition: "opacity 0.3s ease",
+            transition: "opacity 0.2s ease",
           }}
         />
 
-        {/* TEXT LAYER */}
-        {/* TEXT LAYER */}
-        {isEditorReady &&
-          (isEditing ? (
+        {/* TEXT LAYER: Removed isEditorReady check so it shows immediately */}
+        {product && (
+          isEditing ? (
             <textarea
               ref={inputRef}
               className={`${styles.presetText} ${styles.editInput}`}
@@ -222,7 +213,8 @@ const ShirtEditor = forwardRef(({ product }, ref) => {
             >
               {text.trim() || "Your Text Here"}
             </div>
-          ))}
+          )
+        )}
 
         {isEditing && (
           <div className={styles.floatingToolbar}>

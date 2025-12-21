@@ -207,7 +207,7 @@ export default function OrderSuccess() {
         <div
           style={{
             border: "4px solid #f3f3f3",
-            borderTop: "4px solid #3498db",
+            borderTop: "4px solid #ff6b00",
             borderRadius: "50%",
             width: "50px",
             height: "50px",
@@ -259,7 +259,7 @@ export default function OrderSuccess() {
             onClick={() => router.push("/orders")}
             style={{
               padding: "10px 20px",
-              backgroundColor: "#3498db",
+              backgroundColor: "#ff6b00",
               color: "white",
               border: "none",
               borderRadius: "5px",
@@ -319,7 +319,7 @@ export default function OrderSuccess() {
           onClick={() => router.push("/orders")}
           style={{
             padding: "12px 24px",
-            backgroundColor: "#3498db",
+            backgroundColor: "#ff6b00",
             color: "white",
             border: "none",
             borderRadius: "5px",
