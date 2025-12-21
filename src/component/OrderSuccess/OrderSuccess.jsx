@@ -19,8 +19,7 @@ export default function OrderSuccess() {
       const txStatus = searchParams.get("txStatus");
 
       if (!txStatus) {
-        router.replace("/");
-        return;
+        console.log("not found")
       }
 
       const payload = {
