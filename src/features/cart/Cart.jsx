@@ -58,6 +58,8 @@ const Cart = () => {
   const couponDiscount = 0;
   const grandTotal = bagTotal - couponDiscount;
 
+  console.log(grandTotal)
+
   const removeFromCart = async (productId) => {
     try {
       const item = await db.cart.where("productId").equals(productId).first();
@@ -122,7 +124,7 @@ const Cart = () => {
           {
             name: "Product Name",
             sku: "SKU123",
-            totalPrice: 500,
+            totalPrice: grandTotal,
             quantity: 2,
             categoryId: "categoryId1",
             isCustomizable: false,

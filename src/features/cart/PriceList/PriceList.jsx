@@ -9,7 +9,8 @@ const PriceList = ({ bagTotal, grandTotal, handlePayNow, offerData }) => {
   );
 
   const shippingCost = freeDelivery ? 0 : 50;
-  const finalPayable = (grandTotal + shippingCost - discount).toFixed(2);
+  // const finalPayable = (grandTotal + shippingCost - discount).toFixed(2);
+  const finalPayable = (grandTotal - discount).toFixed(2);
 
   return (
     <div className={styles.priceDetails}>
