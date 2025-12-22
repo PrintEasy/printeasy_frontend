@@ -115,88 +115,81 @@ const Cart = () => {
   };
 
   // ----------------- Cashfree Integration -----------------
-  const handlePayNow = async () => {
-    const token = Cookies.get("idToken");
+ const handlePayNow = async () => {
+  const token = Cookies.get("idToken");
 
-    if (!token) {
-      setIsLoginModalVisible(true);
-      return;
-    }
+  if (!token) {
+    setIsLoginModalVisible(true);
+    return;
+  }
 
-    if (cartItems.length === 0) {
-      toast.warning("Your cart is empty!");
-      return;
-    }
+  if (cartItems.length === 0) {
+    toast.warning("Your cart is empty!");
+    return;
+  }
 
-    if (!addressList?.[0]?.id) {
-      toast.warning("Please select a shipping address");
-      return;
-    }
+  if (!addressList?.[0]?.id) {
+    toast.warning("Please select a shipping address");
+    return;
+  }
 
-    try {
-      const res = await api.post(
-        "/v1/orders/create",
-        {
-          shippingAddressId: addressList[0].id,
-          billingAddressId: addressList[0].id,
-          paymentMethod: "ONLINE",
-          totalAmount: grandTotal,
-          items: [
-            {
-              name: "Product Name",
-              sku: "SKU123",
-              totalPrice: grandTotal,
-              quantity: 2,
-              categoryId: "H8SZ4VfsFXa4C9cUeonB",
-              isCustomizable: false,
-              discount: 0,
-              tax: 12,
-              hsn: 482090,
-            },
-          ],
+  try {
+    // ✅ map actual cart items (DO NOT send totalAmount)
+    const items = cartItems.map((item) => ({
+      productId: item.productId,
+      name: item.name,
+      sku: item.sku,
+      totalPrice: Number(item.discountPrice),
+      quantity: Number(item.quantity),
+      categoryId: item.categoryId,
+      isCustomizable: item.isCustomizable || false,
+      discount: 0,
+      tax: 0,
+      hsn: item.hsn || null,
+    }));
+
+    const res = await api.post(
+      "/v1/orders/create",
+      {
+        shippingAddressId: addressList[0].id,
+        billingAddressId: addressList[0].id,
+        paymentMethod: "ONLINE",
+        items, // ✅ correct
+      },
+      {
+        headers: {
+          "x-api-key":
+            "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
         },
-        {
-          headers: {
-            "x-api-key":
-              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
-          },
-        }
-      );
-
-      const orderData = res?.data?.data;
-      localStorage.setItem("pendingOrderId", orderData.orderId);
-      localStorage.setItem(
-        "pendingCashfreeOrderId",
-        orderData.cashfree.orderId
-      );
-      localStorage.setItem("pendingOrderAmount", String(grandTotal));
-      console.log("Order response:", orderData?.cashfree?.sessionId);
-
-      const paymentSessionId = orderData?.cashfree?.sessionId;
-
-      if (!paymentSessionId) {
-        toast.error("Payment session not generated");
-        return;
       }
+    );
 
-      const checkoutOptions = {
-        paymentSessionId,
-        redirectTarget: "_self",
-      };
+    const { orderId, cashfreeOrderId, paymentSessionId } =
+      res?.data?.data || {};
 
-      cashfree.checkout(checkoutOptions).then((result) => {
-        if (result.error) {
-          toast.error(result.error.message);
-        }
-        if (result.redirect) {
-          console.log("Payment redirection in progress");
-        }
-      });
-    } catch (error) {
-      console.error("Cashfree error:", error);
-      toast.error("Failed to initiate payment.");
+    if (!paymentSessionId) {
+      toast.error("Payment session not created");
+      return;
     }
-  };
+
+    // ✅ store ONLY what polling needs
+    localStorage.setItem("pendingOrderId", orderId);
+    localStorage.setItem("pendingCashfreeOrderId", cashfreeOrderId);
+
+    // ✅ One-Click Checkout
+    await cashfree.checkout({
+      paymentSessionId,
+      redirectTarget: "_self",
+    });
+
+    // optional but recommended
+    router.push("/order-success");
+  } catch (error) {
+    console.error("Cashfree error:", error);
+    toast.error("Failed to initiate payment.");
+  }
+};
+
 
   const addToWishlist = async (productId) => {
     if (!accessToken) {
