@@ -145,7 +145,7 @@ const Cart = () => {
       isCustomizable: item.isCustomizable || false,
       discount: 0,
       tax: 0,
-      hsn: item.hsn || null,
+      hsn: "dsbjdbsjdbj",
     }));
 
     const res = await api.post(
