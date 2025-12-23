@@ -126,9 +126,6 @@ const Cart = () => {
       return;
     }
 
-    // 1. Remove the "if (!addressList)" check here
-    // because Cashfree will collect it.
-
     try {
       const items = cartItems.map((item) => ({
         productId: item.productId,
@@ -145,15 +142,16 @@ const Cart = () => {
 
       const res = await api.post(
         "/v1/orders/create",
-       {
-    shippingAddressId: null,
-    paymentMethod: "ONLINE",
-    items,
-   
-    customerPhone: "8861406251", // Get this from your user state/cookie
-    customerName: "Teste",
-    customerEmail: "email@example.com",
-  },
+        {
+          shippingAddressId: null,
+          paymentMethod: "ONLINE",
+          items,
+          user: {
+            name: "Teste",
+            email: "email@example.com",
+            phone: "8861406251",
+          },
+        },
         {
           headers: {
             "x-api-key":
