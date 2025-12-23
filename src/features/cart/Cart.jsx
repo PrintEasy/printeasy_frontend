@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Trash2, ChevronLeft } from "lucide-react";
+import { Trash2, ChevronLeft, Zap } from "lucide-react";
 import styles from "./cart.module.scss";
 import NoResult from "@/component/NoResult/NoResult";
 import { useRouter } from "next/navigation";
@@ -26,16 +26,9 @@ const Cart = () => {
   const accessToken = Cookies.get("idToken");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
-
-  // useEffect(() => {
-  //   const token = Cookies.get("idToken");
-  //   setIsLoggedIn(!!token);
-  // }, []);
-
-  const handleContinue = () => {
-    setIsLoginModalVisible(false);
-    setIsLoggedIn(true);
-  };
+  const [hasSavedAddress, setHasSavedAddress] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     const initCashfree = async () => {
@@ -51,7 +44,39 @@ const Cart = () => {
     db.cart.toArray().then(setCartItems);
     getAddressList();
     getOfferData();
-  }, []);
+    // Get user data if logged in
+    if (accessToken) {
+      getUserData();
+    }
+  }, [accessToken]);
+
+  // Check if user has saved address for one-click checkout
+  useEffect(() => {
+    if (addressList && addressList.length > 0) {
+      setHasSavedAddress(true);
+    } else {
+      setHasSavedAddress(false);
+    }
+  }, [addressList]);
+
+  const getUserData = async () => {
+    try {
+      const res = await api.get(`/v1/user`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "x-api-key": process.env.NEXT_PUBLIC_API_KEY,
+        },
+      });
+      setUser(res?.data?.data || null);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
+  const handleContinue = () => {
+    setIsLoginModalVisible(false);
+    setIsLoggedIn(true);
+  };
 
   const handleQuantityChange = async (id, newQuantity) => {
     if (newQuantity < 1) return;
@@ -72,8 +97,6 @@ const Cart = () => {
   const couponDiscount = 0;
   const grandTotal = bagTotal - couponDiscount;
 
-  console.log(grandTotal);
-
   const removeFromCart = async (productId) => {
     try {
       const item = await db.cart.where("productId").equals(productId).first();
@@ -90,13 +113,14 @@ const Cart = () => {
     try {
       const res = await api.get(`/v1/address/all`, {
         headers: {
-          "x-api-key":
-            "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
+          Authorization: `Bearer ${accessToken}`,
+          "x-api-key": process.env.NEXT_PUBLIC_API_KEY,
         },
       });
       setAddressList(res?.data?.data || []);
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching addresses:", error);
+      setAddressList([]);
     }
   };
 
@@ -104,8 +128,7 @@ const Cart = () => {
     try {
       const res = await api.get(`/v2/giftreward`, {
         headers: {
-          "x-api-key":
-            "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
+          "x-api-key": process.env.NEXT_PUBLIC_API_KEY,
         },
       });
       setOfferData(res?.data?.data || []);
@@ -114,64 +137,190 @@ const Cart = () => {
     }
   };
 
-  // ----------------- Cashfree Integration -----------------
-  const handlePayNow = async () => {
+  // One-Click Checkout Handler - Cashfree collects address
+  const handleOneClickCheckout = async () => {
     const token = Cookies.get("idToken");
     if (!token) {
       setIsLoginModalVisible(true);
       return;
     }
+
     if (cartItems.length === 0) {
       toast.warning("Your cart is empty!");
       return;
     }
 
+    setIsProcessing(true);
     try {
       const items = cartItems.map((item) => ({
         productId: item.productId,
         name: item.name,
         sku: item.sku,
         totalPrice: Number(item.discountPrice),
+        price: Number(item.discountPrice),
         quantity: Number(item.quantity),
         categoryId: item.categoryId,
         isCustomizable: item.isCustomizable || false,
         discount: 0,
         tax: 0,
-        hsn: "dsbjdbsjdbj",
+        hsn: item.hsn || "482090",
+        productImageUrl: item.productImageUrl,
+        imageUrl: item.productImageUrl,
+        renderedImageUrl: item.renderedImageUrl,
       }));
 
+      // ✅ ONE-CLICK CHECKOUT: Don't send address - Cashfree will collect it
       const res = await api.post(
         "/v1/orders/create",
         {
-          shippingAddressId: null,
+          shippingAddressId: null, // Cashfree collects address
+          billingAddressId: null, // Cashfree collects address
           paymentMethod: "ONLINE",
           items,
-          user: {
-            name: "Teste",
-            email: "email@example.com",
-            phone: "8861406251",
+          // Optional: Send user data to help Cashfree pre-fill
+          user: user || {
+            name: "Customer",
+            email: "",
+            phone: "",
           },
         },
         {
           headers: {
-            "x-api-key":
-              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
+            Authorization: `Bearer ${token}`,
+            "x-api-key": process.env.NEXT_PUBLIC_API_KEY,
           },
         }
       );
 
-      const { paymentSessionId, orderId, cashfreeOrderId } =
-        res?.data?.data || {};
+      const orderData = res?.data?.data || {};
+      const paymentSessionId = orderData.cashfree?.sessionId;
+      const orderId = orderData.orderId;
+      const cashfreeOrderId = orderData.cashfree?.orderId;
 
+      if (!paymentSessionId) {
+        toast.error("Failed to create payment session");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Store order info for verification
       localStorage.setItem("pendingOrderId", orderId);
       localStorage.setItem("pendingCashfreeOrderId", cashfreeOrderId);
+      localStorage.setItem("grandTotal", grandTotal.toString());
 
-      await cashfree.checkout({
+      // Initialize Cashfree checkout - Cashfree will show address collection form
+      const result = await cashfree.checkout({
         paymentSessionId,
         redirectTarget: "_self",
       });
+
+      if (result.error) {
+        console.error("Cashfree checkout error:", result.error);
+        toast.error("Payment initialization failed");
+        setIsProcessing(false);
+      }
     } catch (error) {
-      toast.error("Payment failed to start");
+      console.error("One-click checkout error:", error);
+      toast.error(
+        error.response?.data?.message ||
+          "One-click checkout failed. Please try normal checkout."
+      );
+      setIsProcessing(false);
+    }
+  };
+
+  // Normal Checkout Handler - Can send address or let Cashfree collect
+  const handlePayNow = async () => {
+    const token = Cookies.get("idToken");
+    if (!token) {
+      setIsLoginModalVisible(true);
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      toast.warning("Your cart is empty!");
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const items = cartItems.map((item) => ({
+        productId: item.productId,
+        name: item.name,
+        sku: item.sku,
+        totalPrice: Number(item.discountPrice),
+        price: Number(item.discountPrice),
+        quantity: Number(item.quantity),
+        categoryId: item.categoryId,
+        isCustomizable: item.isCustomizable || false,
+        discount: 0,
+        tax: 0,
+        hsn: item.hsn || "482090",
+        productImageUrl: item.productImageUrl,
+        imageUrl: item.productImageUrl,
+        renderedImageUrl: item.renderedImageUrl,
+      }));
+
+      // Normal checkout: Can send address if available, or let Cashfree collect
+      const defaultAddress = addressList.find((addr) => addr.isDefault) || addressList[0];
+
+      const res = await api.post(
+        "/v1/orders/create",
+        {
+          shippingAddressId: defaultAddress?.id || null,
+          billingAddressId: defaultAddress?.id || null,
+          paymentMethod: "ONLINE",
+          items,
+          // If no address, send user data
+          ...(!defaultAddress && {
+            user: user || {
+              name: "Customer",
+              email: "",
+              phone: "",
+            },
+          }),
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "x-api-key": process.env.NEXT_PUBLIC_API_KEY,
+          },
+        }
+      );
+
+      const orderData = res?.data?.data || {};
+      const paymentSessionId = orderData.cashfree?.sessionId;
+      const orderId = orderData.orderId;
+      const cashfreeOrderId = orderData.cashfree?.orderId;
+
+      if (!paymentSessionId) {
+        toast.error("Failed to create payment session");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Store order info for verification
+      localStorage.setItem("pendingOrderId", orderId);
+      localStorage.setItem("pendingCashfreeOrderId", cashfreeOrderId);
+      localStorage.setItem("grandTotal", grandTotal.toString());
+
+      // Initialize Cashfree checkout
+      const result = await cashfree.checkout({
+        paymentSessionId,
+        redirectTarget: "_self",
+      });
+
+      if (result.error) {
+        console.error("Cashfree checkout error:", result.error);
+        toast.error("Payment initialization failed");
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast.error(
+        error.response?.data?.message || "Payment failed to start"
+      );
+      setIsProcessing(false);
     }
   };
 
@@ -272,11 +421,81 @@ const Cart = () => {
                 addressList={addressList}
                 onChange={() => router.push("/address")}
               />
+
+              {/* One-Click Checkout Button */}
+              {hasSavedAddress && (
+                <div style={{ marginBottom: "20px" }}>
+                  <button
+                    onClick={handleOneClickCheckout}
+                    disabled={isProcessing || !cashfree}
+                    style={{
+                      width: "100%",
+                      padding: "15px",
+                      backgroundColor: "#4F46E5",
+                      color: "white",
+                      border: "none",
+                      borderRadius: "8px",
+                      fontSize: "16px",
+                      fontWeight: "600",
+                      cursor:
+                        isProcessing || !cashfree ? "not-allowed" : "pointer",
+                      opacity: isProcessing || !cashfree ? 0.6 : 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "8px",
+                    }}
+                  >
+                    <Zap size={20} />
+                    {isProcessing ? "Processing..." : "One-Click Checkout"}
+                  </button>
+                  <p
+                    style={{
+                      fontSize: "12px",
+                      color: "#666",
+                      marginTop: "8px",
+                      textAlign: "center",
+                    }}
+                  >
+                    Cashfree will collect your address during checkout
+                  </p>
+                </div>
+              )}
+
+              {/* Divider */}
+              {hasSavedAddress && (
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    margin: "20px 0",
+                    gap: "10px",
+                  }}
+                >
+                  <div
+                    style={{
+                      flex: 1,
+                      height: "1px",
+                      backgroundColor: "#ddd",
+                    }}
+                  ></div>
+                  <span style={{ color: "#999", fontSize: "14px" }}>OR</span>
+                  <div
+                    style={{
+                      flex: 1,
+                      height: "1px",
+                      backgroundColor: "#ddd",
+                    }}
+                  ></div>
+                </div>
+              )}
+
               <PriceList
                 bagTotal={bagTotal}
                 grandTotal={grandTotal}
                 handlePayNow={handlePayNow}
                 offerData={offerData}
+                isProcessing={isProcessing}
               />
             </div>
           </div>
