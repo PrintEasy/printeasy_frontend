@@ -115,43 +115,67 @@ const Cart = () => {
   };
 
   // ----------------- Cashfree Integration -----------------
-const handlePayNow = async () => {
-  const token = Cookies.get("idToken");
-  if (!token) { setIsLoginModalVisible(true); return; }
-  if (cartItems.length === 0) { toast.warning("Your cart is empty!"); return; }
+  const handlePayNow = async () => {
+    const token = Cookies.get("idToken");
+    if (!token) {
+      setIsLoginModalVisible(true);
+      return;
+    }
+    if (cartItems.length === 0) {
+      toast.warning("Your cart is empty!");
+      return;
+    }
 
-  // 1. Remove the "if (!addressList)" check here 
-  // because Cashfree will collect it.
+    // 1. Remove the "if (!addressList)" check here
+    // because Cashfree will collect it.
 
-  try {
-    const items = cartItems.map((item) => ({ ...item })); // your map logic
+    try {
+      const items = cartItems.map((item) => ({
+        productId: item.productId,
+        name: item.name,
+        sku: item.sku,
+        totalPrice: Number(item.discountPrice),
+        quantity: Number(item.quantity),
+        categoryId: item.categoryId,
+        isCustomizable: item.isCustomizable || false,
+        discount: 0,
+        tax: 0,
+        hsn: "dsbjdbsjdbj",
+      }));
 
-    const res = await api.post("/v1/orders/create", {
-      // Pass null if address doesn't exist yet
-      shippingAddressId: addressList?.[0]?.id || null, 
-      paymentMethod: "ONLINE",
-      items,
-    },{
-       headers: {
-          "x-api-key":
-            "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
-        },
-    });
+      const res = await api.post(
+        "/v1/orders/create",
+       {
+    shippingAddressId: null,
+    paymentMethod: "ONLINE",
+    items,
+   
+    customerPhone: "8861406251", // Get this from your user state/cookie
+    customerName: "Teste",
+    customerEmail: "email@example.com",
+  },
+        {
+          headers: {
+            "x-api-key":
+              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
+          },
+        }
+      );
 
-    const { paymentSessionId, orderId, cashfreeOrderId } = res?.data?.data || {};
+      const { paymentSessionId, orderId, cashfreeOrderId } =
+        res?.data?.data || {};
 
-    localStorage.setItem("pendingOrderId", orderId);
-    localStorage.setItem("pendingCashfreeOrderId", cashfreeOrderId);
+      localStorage.setItem("pendingOrderId", orderId);
+      localStorage.setItem("pendingCashfreeOrderId", cashfreeOrderId);
 
-    await cashfree.checkout({
-      paymentSessionId,
-      redirectTarget: "_self", 
-    });
-  } catch (error) {
-    toast.error("Payment failed to start");
-  }
-};
-
+      await cashfree.checkout({
+        paymentSessionId,
+        redirectTarget: "_self",
+      });
+    } catch (error) {
+      toast.error("Payment failed to start");
+    }
+  };
 
   const addToWishlist = async (productId) => {
     if (!accessToken) {
