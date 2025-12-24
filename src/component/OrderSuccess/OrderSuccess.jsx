@@ -7,7 +7,8 @@ import "react-toastify/dist/ReactToastify.css";
 import api from "@/axiosInstance/axiosInstance";
 import Cookies from "js-cookie";
 import { db } from "@/lib/db";
-import styles from "./orderSuccess.module.scss"; // You'll need to create this
+import styles from './ordersuccess.module.scss'
+
 
 const OrderSuccess = () => {
   const router = useRouter();
