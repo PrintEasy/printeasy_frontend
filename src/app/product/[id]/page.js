@@ -8,7 +8,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Cookies from "js-cookie";
 import { db } from "@/lib/db";
-import styles from "./ProductDetails.module.scss";
+import styles from './ProductDetails.module.scss'
 import api from "@/axiosInstance/axiosInstance";
 import BottomSheet from "@/component/BottomSheet/BottomSheet";
 import AddToCartSuccessSheet from "@/component/AddToCartSuccessSheet/AddToCartSuccessSheet";
