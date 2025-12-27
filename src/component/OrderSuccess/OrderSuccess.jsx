@@ -18,7 +18,6 @@ export default function OrderSuccess() {
 
   useEffect(() => {
     const verifyPayment = async () => {
-      // Get stored order data from localStorage
       const orderId = localStorage.getItem("pendingOrderId");
       const cashfreeOrderId = localStorage.getItem("pendingCashfreeOrderId");
       const orderAmount = localStorage.getItem("pendingOrderAmount");
@@ -43,7 +42,6 @@ export default function OrderSuccess() {
 
     verifyPayment();
 
-    // Cleanup polling on unmount
     return () => {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);

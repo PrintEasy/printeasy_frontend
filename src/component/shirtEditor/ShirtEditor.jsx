@@ -19,12 +19,24 @@ import familyIcon from "../../assessts/family.svg";
 import keyboardIcon from "../../assessts/keyboard.svg";
 import lineIcon from "../../assessts/Line.svg";
 
-const ShirtEditor = forwardRef(({ product,isEditing,setIsEditing }, ref) => {
-  const [text, setText] = useState("");
+const ShirtEditor = forwardRef(({ 
+  product,
+  isEditing,
+  setIsEditing,
+  selectedSize,
+  selectedFont,
+  selectedColor,
+  setSelectedColor,
+  setSelectedFont,
+  setSelectedSize,
+  text,
+  setText
+}, ref) => {
+  // const [text, setText] = useState("");
   const [fonts, setFonts] = useState([]);
-  const [selectedSize, setSelectedSize] = useState(28);
-  const [selectedFont, setSelectedFont] = useState("Arial");
-  const [selectedColor, setSelectedColor] = useState("#ffffff");
+  // const [selectedSize, setSelectedSize] = useState(28);
+  // const [selectedFont, setSelectedFont] = useState("Arial");
+  // const [selectedColor, setSelectedColor] = useState("#ffffff");
   const [activeTab, setActiveTab] = useState("font");
   const [imageLoaded, setImageLoaded] = useState(false);
   const [scrollPos, setScrollPos] = useState(0);
@@ -36,14 +48,7 @@ const ShirtEditor = forwardRef(({ product,isEditing,setIsEditing }, ref) => {
   const editorRef = useRef(null);
 
   /* ================= INIT FROM PRODUCT ================= */
-  useEffect(() => {
-    if (product) {
-      setText(product.presetText || "");
-      setSelectedColor(product.fontColor || "#ffffff");
-      setSelectedFont(product.fontFamily || "Arial");
-      setSelectedSize(product.fontSize || 28);
-    }
-  }, [product]);
+
 
   /* ================= EXPOSE IMAGE CAPTURE ================= */
   useImperativeHandle(ref, () => ({

@@ -3,7 +3,7 @@ import styles from "./addtobagloader.module.scss";
 
 const AddToBagLoader = () => {
   const messages = [
-    "Adding your customized to cart...",
+    "Preparing your customized order...",
     "Almost there, preparing your style...",
     "Hold tight! Finalizing the product..."
   ];

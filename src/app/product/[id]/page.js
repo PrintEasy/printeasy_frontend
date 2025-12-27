@@ -25,7 +25,6 @@ const ProductDetails = () => {
   const { updateCart, cartCount } = useCart();
 
   const [product, setProduct] = useState(null);
-  const [selectedSize, setSelectedSize] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] = useState(null);
@@ -38,9 +37,23 @@ const ProductDetails = () => {
   const [isCustomizable, setIsCustomizable] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
 const [isEditing, setIsEditing] = useState(false);
+const [text, setText] = useState("");
+ const [selectedSize, setSelectedSize] = useState(28);
+  const [selectedFont, setSelectedFont] = useState("Arial");
+  const [selectedColor, setSelectedColor] = useState("#ffffff");
   const accessToken = Cookies.get("idToken");
   const editorRef = useRef(null);
 
+  console.log(text,"dskdnskdiiioiiioio",selectedColor)
+
+    useEffect(() => {
+      if (product) {
+        setText(product.presetText || "Empty Text");
+        setSelectedColor(product.fontColor || "#ffffff");
+        setSelectedFont(product.fontFamily || "Arial");
+        setSelectedSize(product.fontSize || 28);
+      }
+    }, [product]);
 
   const handleSizeSelect = (size, autoAdd = false) => {
     setSelectedSize(size);
@@ -96,7 +109,13 @@ const [isEditing, setIsEditing] = useState(false);
       },
       options: [{ label: "Size", value: sizeToUse }],
       addedAt: new Date().toISOString(),
+      presetText:text,
+      textColor:selectedColor,
+      fontFamily:selectedFont,
+      fontSize:selectedSize
     };
+
+    console.log(payload,"dskdnskdoooooooo")
 
     try {
       const existingItem = await db.cart
@@ -255,7 +274,20 @@ const [isEditing, setIsEditing] = useState(false);
 
         {/* Product Visual Section */}
         {product?.isCustomizable ? (
-          <ShirtEditor product={product} ref={editorRef} isEditing={isEditing} setIsEditing={setIsEditing}/>
+          <ShirtEditor 
+          product={product} 
+          ref={editorRef} 
+          isEditing={isEditing} 
+          setIsEditing={setIsEditing}
+          text={text}
+          setText={setText}
+          selectedSize={selectedSize}
+          selectedFont={selectedFont}
+          selectedColor={selectedColor}
+          setSelectedColor={setSelectedColor}
+          setSelectedFont={setSelectedFont}
+          setSelectedSize={setSelectedSize}
+          />
         ) : (
           <Image
             src={product?.productImages[0]}
