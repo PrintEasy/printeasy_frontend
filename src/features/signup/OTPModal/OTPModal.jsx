@@ -63,12 +63,24 @@ const OTPModal = ({ phoneNumber, otp, setOtp, handleVerifyOtp, loading }) => {
         ))}
       </div>
 
-      <button className={styles.submitBtn} onClick={handleSubmit} disabled={loading}>
+      <button
+        className={styles.submitBtn}
+        onClick={handleSubmit}
+        disabled={loading}
+      >
         Verify OTP
       </button>
 
-      <p>
-        Didn’t get the OTP? Resend in <strong>{timer}s</strong>
+      <p className={styles.resendText}>
+        {timer > 0 ? (
+          <>
+            Didn’t get the OTP? Resend in <strong>{timer}s</strong>
+          </>
+        ) : (
+          <span className={styles.resendBtn} onClick={handleResend}>
+            Resend OTP
+          </span>
+        )}
       </p>
     </div>
   );

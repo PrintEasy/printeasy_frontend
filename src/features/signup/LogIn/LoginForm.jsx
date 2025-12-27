@@ -129,7 +129,7 @@ const LoginForm = ({ onContinue, setIsLoginModalVisible }) => {
           otp={otp}
           setOtp={setOtp}
           handleVerifyOtp={handleVerifyOtp}
-          loading={loading} // 🔹 pass loader state
+          loading={loading}
         />
       )}
 

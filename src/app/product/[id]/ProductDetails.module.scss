@@ -101,7 +101,7 @@
 
   @media screen and (max-width: 480px) {
     gap: 10px;
-    margin-right:0px;
+    margin-right: 0px;
   }
   // @media screen and (max-width: 432px) {
   //   gap: 10px;
@@ -369,50 +369,72 @@
     }
   }
 
-
-  .button_wrapper{
+  .button_wrapper {
+    display: flex;
     width: 100%;
 
     .addToCart {
-    margin-top: 1.5rem;
-    background: #ff6b00;
-    color: #fff;
-    border: none;
-    padding: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: 0.3s;
-    width: 100%;
-    letter-spacing: 0.5px;
-  }
+      margin-top: 1.5rem;
+      background: #fff;
+      color: #ff6b00;
+      border: none;
+      padding: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+      width: 100%;
+      letter-spacing: 0.5px;
+      border: 2px solid #ff6b00;
+    }
+
+    .buyit_btn {
+      margin-top: 1.5rem;
+      background: #ff6b00;
+      color: #fff;
+      border: none;
+      padding: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: 0.3s;
+      width: 100%;
+      letter-spacing: 0.5px;
+      border: 2px solid #ff6b00;
+    }
   }
 
-   @media (max-width: 450px) {
-      .button_wrapper {
-        position: fixed;
-        bottom: 0;
-        right: 0;
-        width: 100%;
-        height: 5rem;
-        background-color: #efeded;
-        z-index: 999999;
+  @media (max-width: 450px) {
+    .button_wrapper {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      width: 100%;
+      height: 6rem;
+      background-color: #efeded;
+      z-index: 999999;
 
-        .addToCart {
-          position: fixed;
-          bottom: 16px;
-          z-index: 9999;
-          left: 50%;
-          transform: translateX(-50%);
-          max-width: 90%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+
+      .addToCart,
+      .buyit_btn {
+        width: 49.5%;
+        max-width: 300px;
+        margin-top: -2px;
+        padding: 0.75rem;
+
+        p {
+          font-size: 0.5rem;
         }
       }
     }
+  }
 
-    @media (max-width: 480px) {
-      padding: 0.8rem;
-      font-size: 0.9rem;
-    }
-  
+  @media (max-width: 480px) {
+    padding: 0.8rem;
+    font-size: 0.9rem;
+  }
 
   .offerTag {
     font-size: 1rem;
@@ -496,8 +518,8 @@
   }
 }
 
-.infoSection_img{
-    @media screen and (max-width: 435px) {
+.infoSection_img {
+  @media screen and (max-width: 435px) {
     margin-top: 0px;
   }
 }
