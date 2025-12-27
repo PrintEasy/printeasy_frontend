@@ -19,9 +19,8 @@ import familyIcon from "../../assessts/family.svg";
 import keyboardIcon from "../../assessts/keyboard.svg";
 import lineIcon from "../../assessts/Line.svg";
 
-const ShirtEditor = forwardRef(({ product }, ref) => {
+const ShirtEditor = forwardRef(({ product,isEditing,setIsEditing }, ref) => {
   const [text, setText] = useState("");
-  const [isEditing, setIsEditing] = useState(false);
   const [fonts, setFonts] = useState([]);
   const [selectedSize, setSelectedSize] = useState(28);
   const [selectedFont, setSelectedFont] = useState("Arial");

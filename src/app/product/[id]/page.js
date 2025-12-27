@@ -37,11 +37,10 @@ const ProductDetails = () => {
   const [showSuccessCart, setShowSuccessCart] = useState(false);
   const [isCustomizable, setIsCustomizable] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
-
+const [isEditing, setIsEditing] = useState(false);
   const accessToken = Cookies.get("idToken");
   const editorRef = useRef(null);
 
-  // --- Logic Functions ---
 
   const handleSizeSelect = (size, autoAdd = false) => {
     setSelectedSize(size);
@@ -50,13 +49,14 @@ const ProductDetails = () => {
     );
     setSizeInfo(match || null);
 
-    // If triggered from the BottomSheet, add to cart immediately
+    
     if (autoAdd) {
       processAddToCart(size);
     }
   };
 
   const addToCart = async () => {
+    setIsEditing(false);
     if (product?.configuration?.length > 0 && !selectedSize) {
       setShowSizeSheet(true);
       return;
@@ -255,7 +255,7 @@ const ProductDetails = () => {
 
         {/* Product Visual Section */}
         {product?.isCustomizable ? (
-          <ShirtEditor product={product} ref={editorRef} />
+          <ShirtEditor product={product} ref={editorRef} isEditing={isEditing} setIsEditing={setIsEditing}/>
         ) : (
           <Image
             src={product?.productImages[0]}
@@ -381,7 +381,7 @@ const ProductDetails = () => {
                 <button
                   key={s.value}
                   onClick={() => {
-                    handleSizeSelect(s.value, true); // true = auto add to cart
+                    handleSizeSelect(s.value, true);
                     setShowSizeSheet(false);
                   }}
                   className={`${styles.sizeBtn} ${

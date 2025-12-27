@@ -16,7 +16,7 @@ export default function RootLayout({ children }) {
           href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Montserrat:wght@500;700&family=Raleway:wght@500&family=Rubik:wght@500;700&family=Nunito:wght@600&display=swap"
           rel="stylesheet"
         />
-        <link src="https://checkout.razorpay.com/v1/checkout.js"></link>
+        
         <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"></meta>
       </head>
       <body>
