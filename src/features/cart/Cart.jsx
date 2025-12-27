@@ -163,8 +163,9 @@ const Cart = () => {
             },
           }
         );
-
-        renderedImageUrl = uploadRes?.data?.renderedImageUrl || null;
+        console.log(uploadRes,"dsdnsjnduuyyttttt")
+        renderedImageUrl = uploadRes?.data?.data?.renderedImageUrl || null;
+        console.log(renderedImageUrl,"llkkxxbccbnnn")
         if(renderedImageUrl){
           setCartLodaer(false)
         }
