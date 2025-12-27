@@ -213,6 +213,7 @@ const Cart = () => {
       const checkoutOptions = {
         paymentSessionId,
         container: "#cashfree-dropin",
+        redirectTarget: "_self"
       };
 
       cashfree.checkout(checkoutOptions).then((result) => {
@@ -252,8 +253,9 @@ const Cart = () => {
   };
 
   return (
-    <div className={styles.cartPage}>
+    <>
       <div id="cashfree-dropin"></div>
+    <div className={styles.cartPage}>
       <ToastContainer position="top-right" autoClose={2000} />
       {cartItems?.length > 0 ? (
         <>
@@ -363,6 +365,7 @@ const Cart = () => {
         />
       )}
     </div>
+    </>
   );
 };
 
