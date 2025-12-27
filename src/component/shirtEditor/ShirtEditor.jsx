@@ -32,11 +32,7 @@ const ShirtEditor = forwardRef(({
   text,
   setText
 }, ref) => {
-  // const [text, setText] = useState("");
   const [fonts, setFonts] = useState([]);
-  // const [selectedSize, setSelectedSize] = useState(28);
-  // const [selectedFont, setSelectedFont] = useState("Arial");
-  // const [selectedColor, setSelectedColor] = useState("#ffffff");
   const [activeTab, setActiveTab] = useState("font");
   const [imageLoaded, setImageLoaded] = useState(false);
   const [scrollPos, setScrollPos] = useState(0);
@@ -47,23 +43,16 @@ const ShirtEditor = forwardRef(({
   const viewRef = useRef(null);
   const editorRef = useRef(null);
 
-  /* ================= INIT FROM PRODUCT ================= */
-
-
   /* ================= EXPOSE IMAGE CAPTURE ================= */
   useImperativeHandle(ref, () => ({
     captureImage: async () => {
       if (!editorRef.current) return null;
-
       try {
-        // Wait a small buffer for any pending font swaps
         await new Promise((r) => setTimeout(r, 150));
-
         const dataUrl = await toPng(editorRef.current, {
           cacheBust: true,
           pixelRatio: 2,
         });
-
         return dataUrl;
       } catch (err) {
         console.error("Capture failed:", err);
@@ -78,8 +67,7 @@ const ShirtEditor = forwardRef(({
       try {
         const res = await api.get("/v2/font?activeOnly=true", {
           headers: {
-            "x-api-key":
-              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
+            "x-api-key": "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
           },
         });
         setFonts(res?.data?.data || []);
@@ -93,87 +81,95 @@ const ShirtEditor = forwardRef(({
   /* ================= LOAD DYNAMIC FONTS ================= */
   useEffect(() => {
     if (!fonts.length) return;
-
     let isCancelled = false;
-
     const loadFonts = async () => {
       try {
         const fontPromises = fonts.map((font) => {
-          if (loadedFontsRef.current.has(font.family)) {
-            return Promise.resolve();
-          }
-
-          const fontFace = new FontFace(
-            font.family,
-            `url(${font.downloadUrl})`
-          );
-
+          if (loadedFontsRef.current.has(font.family)) return Promise.resolve();
+          const fontFace = new FontFace(font.family, `url(${font.downloadUrl})`);
           return fontFace.load().then((loaded) => {
             document.fonts.add(loaded);
             loadedFontsRef.current.add(font.family);
           });
         });
-
         await Promise.all(fontPromises);
         if (!isCancelled) setFontsLoaded(true);
       } catch (err) {
-        console.error("Font loading failed", err);
         if (!isCancelled) setFontsLoaded(true); 
       }
     };
-
     loadFonts();
     return () => { isCancelled = true; };
   }, [fonts]);
 
-  /* ================= TEXT EDIT HANDLERS ================= */
-  const handleBlur = () => {
+  /* ================= IOS & SCROLL FUNCTIONALITY ================= */
+  
+  const startTextEditing = () => {
+    setIsEditing(true);
+    
+    // 1. Scroll 30% of viewport height on mobile
+    if (window.innerWidth <= 768) {
+      const scrollAmount = window.innerHeight * 0.3;
+      window.scrollTo({
+        top: scrollAmount,
+        behavior: "smooth"
+      });
+    }
+
+    // 2. iOS Keyboard Fix: Use requestAnimationFrame instead of setTimeout
+    // This keeps the focus request tied closer to the user click event
+    requestAnimationFrame(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        const len = inputRef.current.value.length;
+        inputRef.current.setSelectionRange(len, len);
+      }
+    });
+  };
+
+  const handleBlur = (e) => {
+    // 3. Fix Closing Issue: 
+    // If the new focus target is inside the editor (like a font button), don't close.
+    if (e.relatedTarget && editorRef.current?.contains(e.relatedTarget)) {
+      return; 
+    }
+    
     if (inputRef.current) {
       setScrollPos(inputRef.current.scrollTop);
     }
     setIsEditing(false);
   };
 
-  useEffect(() => {
-    if (!isEditing && viewRef.current) {
-      viewRef.current.scrollTop = scrollPos;
-    }
-  }, [isEditing, scrollPos]);
-
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleBlur();
+      handleBlur({ relatedTarget: null }); // Force close on Enter
     }
   };
 
-  const startTextEditing = () => {
-    setIsEditing(true);
-    setActiveTab(null);
-
-    setTimeout(() => {
-      if (inputRef.current) {
-        const len = inputRef.current.value.length;
-        inputRef.current.focus();
-        inputRef.current.setSelectionRange(len, len);
-      }
-    }, 0);
+  /* ================= SELECTION HANDLERS ================= */
+  // Re-focus after selection to ensure the keyboard stays open on iOS
+  const onFontSelect = (font) => {
+    setSelectedFont(font.family);
+    inputRef.current?.focus(); 
+  };
+  const onColorSelect = (c) => {
+    setSelectedColor(c);
+    inputRef.current?.focus();
+  };
+  const onSizeSelect = (s) => {
+    setSelectedSize(s);
+    inputRef.current?.focus();
   };
 
-  /* ================= SELECTION HANDLERS ================= */
-  const onFontSelect = (font) => setSelectedFont(font.family);
-  const onColorSelect = (c) => setSelectedColor(c);
-  const onSizeSelect = (s) => setSelectedSize(s);
-
-  /* ================= DYNAMIC STYLES ================= */
   const dynamicStyles = {
     color: selectedColor,
-    fontFamily: `'${selectedFont}', Arial, sans-serif`, // Added fallbacks for instant render
+    fontFamily: `'${selectedFont}', Arial, sans-serif`,
     fontSize: `${selectedSize}px`,
   };
 
   return (
-    <section className={styles.img_main_wrap} ref={editorRef}>
+    <section className={styles.img_main_wrap} ref={editorRef} tabIndex="-1">
       <div className={styles.img_wrap}>
         {!imageLoaded && (
           <div className={styles.shimmerWrapper}>
@@ -196,7 +192,6 @@ const ShirtEditor = forwardRef(({
           }}
         />
 
-        {/* TEXT LAYER: Removed isEditorReady check so it shows immediately */}
         {product && (
           isEditing ? (
             <textarea
@@ -212,7 +207,7 @@ const ShirtEditor = forwardRef(({
             <div
               ref={viewRef}
               className={styles.presetText}
-              onClick={() => setIsEditing(true)}
+              onClick={startTextEditing}
               style={dynamicStyles}
             >
               {text.trim() || "Your Text Here"}
@@ -221,12 +216,10 @@ const ShirtEditor = forwardRef(({
         )}
 
         {isEditing && (
-          <div className={styles.floatingToolbar}>
+          <div className={styles.floatingToolbar} tabIndex="-1">
             <button
               onClick={() => setActiveTab("size")}
-              className={`${styles.toolButton} ${
-                activeTab === "size" ? styles.activeTool : ""
-              }`}
+              className={`${styles.toolButton} ${activeTab === "size" ? styles.activeTool : ""}`}
             >
               <Image src={letterIcon} alt="size" />
               <span>Font Size</span>
@@ -234,9 +227,7 @@ const ShirtEditor = forwardRef(({
 
             <button
               onClick={() => setActiveTab("color")}
-              className={`${styles.toolButton} ${
-                activeTab === "color" ? styles.activeTool : ""
-              }`}
+              className={`${styles.toolButton} ${activeTab === "color" ? styles.activeTool : ""}`}
             >
               <Image src={fontIcon} alt="color" />
               <span>Colour</span>
@@ -244,9 +235,7 @@ const ShirtEditor = forwardRef(({
 
             <button
               onClick={() => setActiveTab("font")}
-              className={`${styles.toolButton} ${
-                activeTab === "font" ? styles.activeTool : ""
-              }`}
+              className={`${styles.toolButton} ${activeTab === "font" ? styles.activeTool : ""}`}
             >
               <Image src={familyIcon} alt="font" />
               <span>Fonts</span>
@@ -271,9 +260,7 @@ const ShirtEditor = forwardRef(({
                     <button
                       key={font.family}
                       onClick={() => onFontSelect(font)}
-                      className={`${styles.fontOption} ${
-                        selectedFont === font.family ? styles.active : ""
-                      }`}
+                      className={`${styles.fontOption} ${selectedFont === font.family ? styles.active : ""}`}
                       style={{ fontFamily: font.family }}
                     >
                       {font.family}
@@ -289,9 +276,7 @@ const ShirtEditor = forwardRef(({
                     <button
                       key={c}
                       onClick={() => onColorSelect(c)}
-                      className={`${styles.colorSwatch} ${
-                        selectedColor === c ? styles.activeColor : ""
-                      }`}
+                      className={`${styles.colorSwatch} ${selectedColor === c ? styles.activeColor : ""}`}
                       style={{ backgroundColor: c }}
                     />
                   ))}
@@ -304,9 +289,7 @@ const ShirtEditor = forwardRef(({
                     <button
                       key={s}
                       onClick={() => onSizeSelect(s)}
-                      className={`${styles.sizeBtn} ${
-                        selectedSize === s ? styles.activeSize : ""
-                      }`}
+                      className={`${styles.sizeBtn} ${selectedSize === s ? styles.activeSize : ""}`}
                     >
                       {s}
                     </button>

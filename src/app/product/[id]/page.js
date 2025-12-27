@@ -50,7 +50,7 @@ const [text, setText] = useState("");
       if (product) {
         setText(product.presetText || "Empty Text");
         setSelectedColor(product.fontColor || "#000");
-        setSelectedFont(product.fontFamily || "Arial");
+        setSelectedFont(product.fontFamily || "");
         setSelectedSize(product.fontSize || 28);
       }
     }, [product]);
