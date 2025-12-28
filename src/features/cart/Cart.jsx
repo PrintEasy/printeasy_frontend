@@ -112,7 +112,7 @@ const Cart = () => {
             "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
         },
       });
-      setOfferData(res?.data?.data || []);
+      setOfferData(res?.data?.data || []);  
     } catch (error) {
       console.error(error);
     }
