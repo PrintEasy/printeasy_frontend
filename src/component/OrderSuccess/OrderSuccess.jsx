@@ -111,7 +111,7 @@ export default function OrderSuccess() {
           // Clear cart
           await db.cart.clear();
 
-          toast.success("Order Confirmed 🎉");
+          // toast.success("Order Confirmed 🎉");
           setSuccess(true);
           setLoading(false);
 
