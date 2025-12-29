@@ -29,13 +29,13 @@ const Page = () => {
     } catch (error) {
       console.error(error);
     } finally {
-      // setLoading(false);
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     if (orderId) getUserOrder();
-    // else setLoading(false);
+    else setLoading(false);
   }, []);
 
   /* 🔹 SHIMMER UI */
