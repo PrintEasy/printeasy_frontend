@@ -206,6 +206,7 @@ const Cart = () => {
       cashfree.checkout({
         paymentSessionId,
         redirectTarget: document.getElementById("cashfree-dropin"),
+        returnUrl: `${window.location.origin}/order-status?order_id={order_id}`,
       });
     } catch (error) {
       console.error("Payment error:", error);
