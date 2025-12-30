@@ -28,6 +28,7 @@ const Cart = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
   const [cartLoader, setCartLodaer] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
 
   console.log(cartItems, "sksksiisoueuyyexxxx");
 
@@ -147,20 +148,40 @@ const Cart = () => {
 
   // ----------------- Cashfree Integration -----------------
   const handlePayNow = async () => {
-  if (cartItems.length === 0) {
-    toast.warning("Your cart is empty!");
-    return;
-  }
+    if (cartItems.length === 0) {
+      toast.warning("Your cart is empty!");
+      return;
+    }
 
-  try {
-    setCartLodaer(true);
-    let renderedImageUrl = null;
+    try {
+      setCartLodaer(true);
+      let renderedImageUrl = null;
 
-    /* ---------- Upload Image (if any) ---------- */
-    if (uploadImagePayload) {
-      const uploadRes = await api.post(
-        "/v1/cart/upload-image",
-        { printingImgText: uploadImagePayload },
+      if (uploadImagePayload) {
+        const uploadRes = await api.post(
+          "/v1/cart/upload-image",
+          { printingImgText: uploadImagePayload },
+          {
+            headers: {
+              "x-api-key":
+                "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
+            },
+          }
+        );
+        renderedImageUrl = uploadRes?.data?.data?.renderedImageUrl || null;
+      }
+
+      const finalItems = orderPayloadItems.map((item) =>
+        item.isCustomizable ? { ...item, imageUrl: renderedImageUrl } : item
+      );
+
+      const orderRes = await api.post(
+        "/v1/orders/create",
+        {
+          paymentMethod: "ONLINE",
+          totalAmount: grandTotal,
+          items: finalItems,
+        },
         {
           headers: {
             "x-api-key":
@@ -169,78 +190,30 @@ const Cart = () => {
         }
       );
 
-      renderedImageUrl =
-        uploadRes?.data?.data?.renderedImageUrl || null;
-    }
+      const orderData = orderRes?.data?.data;
+      const paymentSessionId = orderData?.cashfree?.sessionId;
 
-    /* ---------- Attach image to customizable items ---------- */
-    const finalItems = orderPayloadItems.map((item) =>
-      item.isCustomizable ? { ...item, imageUrl: renderedImageUrl } : item
-    );
-
-    /* ---------- Create Order ---------- */
-    const orderRes = await api.post(
-      "/v1/orders/create",
-      {
-        paymentMethod: "ONLINE",
-        totalAmount: grandTotal,
-        items: finalItems,
-      },
-      {
-        headers: {
-          "x-api-key":
-            "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
-        },
+      if (!paymentSessionId) {
+        toast.error("Payment session not generated");
+        return;
       }
-    );
 
-    const orderData = orderRes?.data?.data;
+      // 🔥 SHOW CHECKOUT, HIDE CART
+      setShowCheckout(true);
 
-    localStorage.setItem("pendingOrderId", orderData.orderId);
-    localStorage.setItem(
-      "pendingCashfreeOrderId",
-      orderData.cashfree.orderId
-    );
-    localStorage.setItem(
-      "pendingOrderAmount",
-      String(grandTotal)
-    );
+      const cashfree = Cashfree({ mode: "production" });
 
-    const paymentSessionId = orderData?.cashfree?.sessionId;
-
-    if (!paymentSessionId) {
-      toast.error("Payment session not generated");
-      return;
-    }
-
-    /* ---------- Cashfree INLINE Checkout ---------- */
-    const cashfree = Cashfree({
-      mode: process.env.NODE_ENV === "production" ? "production" : "sandbox",
-    });
-
-    cashfree
-      .checkout({
+      cashfree.checkout({
         paymentSessionId,
         redirectTarget: document.getElementById("cashfree-dropin"),
-        returnUrl: `${window.location.origin}/order-status?order_id={order_id}`,
-      })
-      .then((result) => {
-        if (result.error) {
-          toast.error(result.error.message);
-        }
-
-        if (result.redirect) {
-          console.log("Cashfree handling redirect internally");
-        }
       });
-  } catch (error) {
-    console.error("Payment error:", error);
-    toast.error("Failed to initiate payment");
-  } finally {
-    setCartLodaer(false);
-  }
-};
-
+    } catch (error) {
+      console.error("Payment error:", error);
+      toast.error("Failed to initiate payment");
+    } finally {
+      setCartLodaer(false);
+    }
+  };
 
   const addToWishlist = async (productId) => {
     if (!accessToken) {
@@ -266,10 +239,16 @@ const Cart = () => {
 
   return (
     <>
-      <div
-        id="cashfree-dropin"
-        style={{ width: "100%", height: "100vh" }}
-      ></div>
+      {showCheckout && (
+        <div
+          id="cashfree-dropin"
+          style={{
+            width: "100%",
+            minHeight: "100vh",
+            background: "#fff",
+          }}
+        />
+      )}
       <div className={styles.cartPage}>
         <ToastContainer position="top-right" autoClose={2000} />
         {cartItems?.length > 0 ? (
