@@ -28,7 +28,7 @@ const Cart = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
   const [cartLoader, setCartLodaer] = useState(false);
-  const [showCheckout, setShowCheckout] = useState(false);
+  const [showCartUI, setShowCartUI] = useState(true);
 
   console.log(cartItems, "sksksiisoueuyyexxxx");
 
@@ -199,14 +199,14 @@ const Cart = () => {
       }
 
       // 🔥 SHOW CHECKOUT, HIDE CART
-      // setShowCheckout(true);
+      setShowCartUI(false);
 
       const cashfree = Cashfree({ mode: "production" });
 
       cashfree.checkout({
         paymentSessionId,
         redirectTarget: document.getElementById("cashfree-dropin"),
-        returnUrl: `${window.location.origin}/order-status?order_id={order_id}`,
+        returnUrl: `${"https://onrise.in"}/order-success?order_id={order_id}`,
       });
     } catch (error) {
       console.error("Payment error:", error);
@@ -240,16 +240,16 @@ const Cart = () => {
 
   return (
     <>
-      {/* {showCheckout && ( */}
-        <div
-          id="cashfree-dropin"
-          style={{
-            width: "100%",
-            height: "100vh"
-          }}
-        />
-      {/* )} */}
-      <div className={styles.cartPage}>
+      <div
+        id="cashfree-dropin"
+        style={{
+          width: "100%",
+          height: "auto",
+        }}
+      />
+      {
+        showCartUI && 
+         <div className={styles.cartPage}>
         <ToastContainer position="top-right" autoClose={2000} />
         {cartItems?.length > 0 ? (
           <>
@@ -359,6 +359,8 @@ const Cart = () => {
           />
         )}
       </div>
+      }
+     
     </>
   );
 };
