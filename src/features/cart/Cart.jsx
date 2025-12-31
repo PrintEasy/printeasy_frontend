@@ -12,7 +12,7 @@ import "react-toastify/dist/ReactToastify.css";
 import api from "@/axiosInstance/axiosInstance";
 import { db } from "@/lib/db";
 import Cookies from "js-cookie";
-import { Cashfree } from "@cashfreepayments/cashfree-js";
+import { load } from "@cashfreepayments/cashfree-js";
 import DynamicModal from "@/component/Modal/Modal";
 import LoginForm from "../signup/LogIn/LoginForm";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
@@ -180,7 +180,7 @@ const Cart = () => {
       setShowCartUI(false);
       setCartLodaer(false);
 
-      const cashfree = await Cashfree({ mode: "production" });
+      const cashfree = await load({ mode: "production" });
 
       // Embedded checkout with callbacks
       const checkoutOptions = {
@@ -192,17 +192,17 @@ const Cart = () => {
         },
         onSuccess: async function (data) {
           console.log("Payment Success:", data);
-          
+
           // Clear cart after successful payment
           await db.cart.clear();
-          
+
           // Redirect to success page with order ID
           router.push(`/order-success?orderId=${orderId}`);
         },
         onFailure: function (data) {
           console.log("Payment Failed:", data);
           toast.error("Payment failed. Please try again.");
-          
+
           // Show cart UI again
           setShowCartUI(true);
         },
@@ -229,7 +229,8 @@ const Cart = () => {
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
-            "x-api-key": process.env.NEXT_PUBLIC_API_KEY,
+            "x-api-key":
+              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
           },
         }
       );
@@ -254,7 +255,10 @@ const Cart = () => {
           <ToastContainer position="top-right" autoClose={2000} />
           {cartItems?.length > 0 ? (
             <>
-              <button className={styles.iconBtn} onClick={() => router.push("/")}>
+              <button
+                className={styles.iconBtn}
+                onClick={() => router.push("/")}
+              >
                 <ChevronLeft size={22} />
               </button>
               <CartRewards totalAmount={bagTotal} />
