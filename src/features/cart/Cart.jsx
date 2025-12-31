@@ -12,7 +12,7 @@ import "react-toastify/dist/ReactToastify.css";
 import api from "@/axiosInstance/axiosInstance";
 import { db } from "@/lib/db";
 import Cookies from "js-cookie";
-import { load } from "@cashfreepayments/cashfree-js";
+import { Cashfree } from "@cashfreepayments/cashfree-js";
 import DynamicModal from "@/component/Modal/Modal";
 import LoginForm from "../signup/LogIn/LoginForm";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
@@ -22,7 +22,6 @@ const Cart = () => {
   const [cartItems, setCartItems] = useState([]);
   const [addressList, setAddressList] = useState([]);
   const [offerData, setOfferData] = useState([]);
-  const [cashfree, setCashfree] = useState(null);
   const router = useRouter();
   const accessToken = Cookies.get("idToken");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -30,27 +29,10 @@ const Cart = () => {
   const [cartLoader, setCartLodaer] = useState(false);
   const [showCartUI, setShowCartUI] = useState(true);
 
-  console.log(cartItems, "sksksiisoueuyyexxxx");
-
-  // useEffect(() => {
-  //   const token = Cookies.get("idToken");
-  //   setIsLoggedIn(!!token);
-  // }, []);
-
   const handleContinue = () => {
     setIsLoginModalVisible(false);
     setIsLoggedIn(true);
   };
-
-  useEffect(() => {
-    const initCashfree = async () => {
-      const cf = await load({
-        mode: "production",
-      });
-      setCashfree(cf);
-    };
-    initCashfree();
-  }, []);
 
   useEffect(() => {
     db.cart.toArray().then(setCartItems);
@@ -77,15 +59,12 @@ const Cart = () => {
   const couponDiscount = 0;
   const grandTotal = bagTotal - couponDiscount;
 
-  console.log(grandTotal);
-
   const removeFromCart = async (productId) => {
     try {
       const item = await db.cart.where("productId").equals(productId).first();
       if (!item) return;
       await db.cart.delete(item.id);
       setCartItems((prev) => prev.filter((i) => i.productId !== productId));
-      // toast.success("Item removed");
     } catch (err) {
       toast.error("Failed to remove item");
     }
@@ -119,8 +98,6 @@ const Cart = () => {
     }
   };
 
-  console.log(cartItems[0]?.fullProductUrl, "dsdsssssssssssss");
-
   const orderPayloadItems = cartItems.map((item) => ({
     name: item.name,
     sku: item.sku || item.productId,
@@ -135,7 +112,6 @@ const Cart = () => {
   }));
 
   const customizableItem = cartItems.find((item) => item.isCustomizable);
-  console.log(customizableItem?.illustrationImage, "jdksjdkjsduuuyyyy");
   const uploadImagePayload = customizableItem
     ? {
         printText: customizableItem.presetText || "Empty Text",
@@ -192,27 +168,52 @@ const Cart = () => {
 
       const orderData = orderRes?.data?.data;
       const paymentSessionId = orderData?.cashfree?.sessionId;
+      const orderId = orderData?.cashfree?.orderId;
 
       if (!paymentSessionId) {
         toast.error("Payment session not generated");
+        setCartLodaer(false);
         return;
       }
 
-      // 🔥 SHOW CHECKOUT, HIDE CART
+      // Hide cart UI and show checkout
       setShowCartUI(false);
+      setCartLodaer(false);
 
-      const cashfree = Cashfree({ mode: "production" });
+      const cashfree = await Cashfree({ mode: "production" });
 
-      cashfree.checkout({
+      // Embedded checkout with callbacks
+      const checkoutOptions = {
         paymentSessionId,
-        returnUrl: `${window.location.origin}/order-success?order_id=${cashfreeOrderId}`,
         redirectTarget: document.getElementById("cashfree-dropin"),
-      });
+        appearance: {
+          width: "100%",
+          height: "700px",
+        },
+        onSuccess: async function (data) {
+          console.log("Payment Success:", data);
+          
+          // Clear cart after successful payment
+          await db.cart.clear();
+          
+          // Redirect to success page with order ID
+          router.push(`/order-success?orderId=${orderId}`);
+        },
+        onFailure: function (data) {
+          console.log("Payment Failed:", data);
+          toast.error("Payment failed. Please try again.");
+          
+          // Show cart UI again
+          setShowCartUI(true);
+        },
+      };
+
+      cashfree.checkout(checkoutOptions);
     } catch (error) {
       console.error("Payment error:", error);
       toast.error("Failed to initiate payment");
-    } finally {
       setCartLodaer(false);
+      setShowCartUI(true);
     }
   };
 
@@ -244,7 +245,8 @@ const Cart = () => {
         id="cashfree-dropin"
         style={{
           width: "100%",
-          height: "auto",
+          minHeight: showCartUI ? "0" : "700px",
+          display: showCartUI ? "none" : "block",
         }}
       />
       {showCartUI && (
@@ -252,10 +254,7 @@ const Cart = () => {
           <ToastContainer position="top-right" autoClose={2000} />
           {cartItems?.length > 0 ? (
             <>
-              <button
-                className={styles.iconBtn}
-                onClick={() => router.push("/")}
-              >
+              <button className={styles.iconBtn} onClick={() => router.push("/")}>
                 <ChevronLeft size={22} />
               </button>
               <CartRewards totalAmount={bagTotal} />
