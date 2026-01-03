@@ -199,6 +199,8 @@ const ShirtEditor = forwardRef(
             height={600}
             className={styles.mainImage}
             priority
+            crossOrigin="anonymous"
+            loading="eager"
             unoptimized
             onLoadingComplete={() => setImageLoaded(true)}
             style={{

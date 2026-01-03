@@ -22,6 +22,7 @@ import { load } from "@cashfreepayments/cashfree-js";
 import DynamicModal from "@/component/Modal/Modal";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
 
+
 const ProductDetails = () => {
   const { id } = useParams();
   const router = useRouter();
