@@ -22,7 +22,6 @@ import { load } from "@cashfreepayments/cashfree-js";
 import DynamicModal from "@/component/Modal/Modal";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
 
-
 const ProductDetails = () => {
   const { id } = useParams();
   const router = useRouter();
@@ -70,7 +69,6 @@ const ProductDetails = () => {
       processAddToCart(size);
     }
   };
-
 
   const addToCart = async () => {
     setIsEditing(false);
@@ -179,30 +177,28 @@ const ProductDetails = () => {
     }
   };
 
-const handleShare = async () => {
-  const shareUrl = window.location.href;
-  const title = product?.name || "Check this out!";
-  const text = `${title}`;
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    const title = product?.name || "Check this out!";
+    const text = `${title}`;
 
-  if (navigator.share) {
-    try {
-      await navigator.share({
-        title,
-        text,
-        url: shareUrl,
-      });
-    } catch (error) {
-      console.log("Share cancelled", error);
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title,
+          text,
+          url: shareUrl,
+        });
+      } catch (error) {
+        console.log("Share cancelled", error);
+      }
+    } else {
+      window.open(
+        `https://wa.me/?text=${encodeURIComponent(`${title}\n${shareUrl}`)}`,
+        "_blank"
+      );
     }
-  } else {
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(`${title}\n${shareUrl}`)}`,
-      "_blank"
-    );
-  }
-};
-
-
+  };
 
   // --- Effects ---
 
@@ -436,6 +432,8 @@ const handleShare = async () => {
                 width={500}
                 height={600}
                 className={styles.mainImage}
+                crossOrigin="anonymous"
+                loading="eager"
                 priority
               />
             )}

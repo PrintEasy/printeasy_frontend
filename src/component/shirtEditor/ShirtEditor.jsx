@@ -70,52 +70,25 @@ const ShirtEditor = forwardRef(
     };
 
     /* ================= EXPOSE IMAGE CAPTURE ================= */
-    useImperativeHandle(ref, () => ({
+   useImperativeHandle(ref, () => ({
       captureImage: async () => {
         if (!editorRef.current) return null;
 
-        const node = editorRef.current;
+        const selectedFontObj = fonts.find((f) => f.family === selectedFont);
 
-        try {
-          // Inject selected font
-          const selectedFontObj = fonts.find((f) => f.family === selectedFont);
-
-          if (selectedFontObj) {
-            injectFontCSS(selectedFontObj.family, selectedFontObj.downloadUrl);
-          }
-
-          // iOS font loading (CRITICAL)
-          await document.fonts.load(`16px "${selectedFont}"`);
-          await document.fonts.ready;
-
-          // iOS rendering delay (CRITICAL)
-          await new Promise((r) => setTimeout(r, 600));
-
-          return await toPng(node, {
-            cacheBust: true,
-            pixelRatio: 2,
-            backgroundColor: "#ffffff", // REQUIRED FOR iOS
-            useCORS: true, // REQUIRED
-            skipFonts: false,
-
-            // iOS-safe filtering
-            filter: (el) => {
-              const style = window.getComputedStyle(el);
-              if (
-                style.filter !== "none" ||
-                style.backdropFilter !== "none" ||
-                style.transform !== "none" ||
-                style.position === "fixed"
-              ) {
-                return false;
-              }
-              return true;
-            },
-          });
-        } catch (err) {
-          console.error("Capture failed on iOS:", err);
-          return null;
+        if (selectedFontObj) {
+          injectFontCSS(selectedFontObj.family, selectedFontObj.downloadUrl);
         }
+
+        await document.fonts.load(`16px "${selectedFont}"`);
+        await document.fonts.ready;
+
+        await new Promise((r) => setTimeout(r, 300));
+
+        return await toPng(editorRef.current, {
+          cacheBust: true,
+          pixelRatio: 2,
+        });
       },
     }));
 
