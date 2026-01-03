@@ -70,25 +70,30 @@ const ShirtEditor = forwardRef(
     };
 
     /* ================= EXPOSE IMAGE CAPTURE ================= */
-   useImperativeHandle(ref, () => ({
+    useImperativeHandle(ref, () => ({
       captureImage: async () => {
         if (!editorRef.current) return null;
 
-        const selectedFontObj = fonts.find((f) => f.family === selectedFont);
+        try {
+          const selectedFontObj = fonts.find((f) => f.family === selectedFont);
 
-        if (selectedFontObj) {
-          injectFontCSS(selectedFontObj.family, selectedFontObj.downloadUrl);
+          if (selectedFontObj) {
+            injectFontCSS(selectedFontObj.family, selectedFontObj.downloadUrl);
+          }
+
+          // Ensure fonts are loaded before capturing
+          await document.fonts.ready;
+
+          return await toPng(editorRef.current, {
+            cacheBust: true,
+            pixelRatio: 2,
+            // This tells the library NOT to fail if it hits a restricted stylesheet
+            skipFonts: false,
+          });
+        } catch (error) {
+          console.error("Capture failed:", error);
+          return null;
         }
-
-        await document.fonts.load(`16px "${selectedFont}"`);
-        await document.fonts.ready;
-
-        await new Promise((r) => setTimeout(r, 300));
-
-        return await toPng(editorRef.current, {
-          cacheBust: true,
-          pixelRatio: 2,
-        });
       },
     }));
 
