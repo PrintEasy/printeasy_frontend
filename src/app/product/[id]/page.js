@@ -183,45 +183,29 @@ const ProductDetails = () => {
 
   console.log(product,"dsnjdnjsduyyyyyy")
 
- const handleShare = async () => {
+const handleShare = async () => {
   const shareUrl = window.location.href;
-  const imageUrl = product?.productImages[0]; 
   const title = product?.name || "Check this out!";
+  const text = `${title}`;
 
-  // Check if browser supports sharing files (Web Share API v2)
-  if (navigator.canShare && navigator.share) {
+  if (navigator.share) {
     try {
-      if (imageUrl) {
-        const response = await fetch(imageUrl);
-        const blob = await response.blob();
-        const file = new File([blob], "product.jpg", { type: blob.type });
-
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({
-            title,
-            text: title,
-            files: [file],
-          });
-          return;
-        }
-      }
-
-      // fallback without image
       await navigator.share({
         title,
-        url: shareUrl,
+        text,
+        url: shareUrl, // 👈 THIS triggers OG preview
       });
     } catch (error) {
       console.log("Share cancelled", error);
     }
   } else {
-    // WhatsApp fallback (image preview comes from URL OG tags)
     window.open(
       `https://wa.me/?text=${encodeURIComponent(`${title}\n${shareUrl}`)}`,
       "_blank"
     );
   }
 };
+
 
 
   // --- Effects ---
