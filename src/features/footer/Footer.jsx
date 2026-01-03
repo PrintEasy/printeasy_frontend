@@ -18,7 +18,7 @@ const Footer = () => {
     <footer className={styles.footer}>
       {/* Logo */}
       <div className={styles.logoSection}>
-        <Image src={logo} alt="Onrise" width={70} height={70} />
+        <Image src={logo} alt="Onrise" width={35} height={35} />
         <h2>ONRISE</h2>
       </div>
 

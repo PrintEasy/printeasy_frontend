@@ -49,8 +49,6 @@ const ProductDetails = () => {
   const [showProductUI, setShowProductUI] = useState(true);
   const editorRef = useRef(null);
 
-  console.log(text, "dskdnskdiiioiiioio", selectedColor);
-
   useEffect(() => {
     if (product) {
       setText(product.presetText || "Empty Text");
@@ -72,9 +70,11 @@ const ProductDetails = () => {
     }
   };
 
+  console.log(sizeInfo,"dsjdsjduyyyy")
+
   const addToCart = async () => {
     setIsEditing(false);
-    if (product?.configuration?.length > 0 && !selectedSize) {
+    if (sizeInfo === null) {
       setShowSizeSheet(true);
       return;
     }
@@ -93,9 +93,6 @@ const ProductDetails = () => {
       console.error("Capture image error:", error);
     }
 
-    console.log(product, "dnsdsjdiuuyyyyy");
-
-    console.log(product, "djkjkjdfijfidfidfidnvnvnvn");
     const payload = {
       productId: product.id,
       categoryId: product.categoryId,
