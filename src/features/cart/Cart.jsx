@@ -29,7 +29,7 @@ const Cart = () => {
   const [cartLoader, setCartLodaer] = useState(false);
   const [showCartUI, setShowCartUI] = useState(true);
 
-  
+
 
   const handleContinue = () => {
     setIsLoginModalVisible(false);
@@ -205,7 +205,7 @@ const Cart = () => {
       cashfree.checkout(checkoutOptions).then((result) => {
         if (result.error) {
           console.error("SDK Error:", result.error);
-          toast.error(result.error.message);
+          // toast.error(result.error.message);
           setShowCartUI(true);
         }
 

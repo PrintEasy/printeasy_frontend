@@ -193,7 +193,7 @@ const handleShare = async () => {
       await navigator.share({
         title,
         text,
-        url: shareUrl, // 👈 THIS triggers OG preview
+        url: shareUrl,
       });
     } catch (error) {
       console.log("Share cancelled", error);
@@ -351,7 +351,7 @@ const handleShare = async () => {
       cashfree.checkout(checkoutOptions).then((result) => {
         if (result.error) {
           console.error("SDK Error:", result.error);
-          toast.error(result.error.message);
+          // toast.error(result.error.message);
           setShowProductUI(true);
         }
 
