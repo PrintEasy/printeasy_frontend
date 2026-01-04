@@ -8,12 +8,13 @@ import { usePathname, useRouter } from "next/navigation";
 import api from "@/axiosInstance/axiosInstance";
 
 const ProductCard = ({ item, getwishList }) => {
+  console.log(item,"dsnkdnsknduuiiiii")
   const [liked, setLiked] = useState(false);
   const router = useRouter();
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   const pathname = usePathname();
   const handleClick = () => {
-    router.push(`/product/${item?.id}`);
+    router.push(`/product/${item?.slug}`);
   };
 
   useEffect(() => {

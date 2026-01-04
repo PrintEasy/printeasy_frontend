@@ -48,6 +48,8 @@ const ProductDetails = () => {
   const [imageUploadLoader, setImageUploadLoader] = useState(false);
   const [showProductUI, setShowProductUI] = useState(true);
   const editorRef = useRef(null);
+  const [resumePayment, setResumePayment] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
 
   useEffect(() => {
     if (product) {
@@ -58,24 +60,37 @@ const ProductDetails = () => {
     }
   }, [product]);
 
-  const handleSizeSelect = (size, autoAdd = false) => {
+  const handleSizeSelect = (size) => {
     setSelectedSize(size);
+
     const match = product?.configuration?.[0]?.options.find(
       (item) => item.value === size
     );
-    setSizeInfo(match || null);
 
-    if (autoAdd) {
+    setSizeInfo(match || null);
+    setShowSizeSheet(false);
+
+    // 🔥 Resume correct action
+    if (pendingAction === "PAY_NOW") {
+      setPendingAction(null);
+      proceedWithPayment();
+    }
+
+    if (pendingAction === "ADD_TO_CART") {
+      setPendingAction(null);
       processAddToCart(size);
     }
   };
 
   const addToCart = async () => {
     setIsEditing(false);
-    if (sizeInfo === null) {
+
+    if (!sizeInfo) {
+      setPendingAction("ADD_TO_CART");
       setShowSizeSheet(true);
       return;
     }
+
     await processAddToCart(selectedSize);
   };
 
@@ -255,6 +270,18 @@ const ProductDetails = () => {
   };
 
   const handlePayNow = async () => {
+    setIsEditing(false);
+
+    if (!sizeInfo) {
+      setPendingAction("PAY_NOW");
+      setShowSizeSheet(true);
+      return;
+    }
+
+    await proceedWithPayment();
+  };
+
+  const proceedWithPayment = async () => {
     try {
       setImageUploadLoader(true);
       let renderedImageUrl = null;
@@ -270,6 +297,7 @@ const ProductDetails = () => {
             },
           }
         );
+
         renderedImageUrl = uploadRes?.data?.data?.renderedImageUrl || null;
       }
 
@@ -278,16 +306,15 @@ const ProductDetails = () => {
           imageUrl: renderedImageUrl,
           name: product.name,
           sku: product.sku || product.productId,
-          totalPrice: product.totalPrice,
-          quantity: product.quantity,
+          productImageUrl: product?.fullProductUrl,
           categoryId: product.categoryId,
           isCustomizable: !!product.isCustomizable,
-          productImageUrl: product?.fullProductUrl,
           discount: product.discount || 0,
           tax: product.tax || 0,
           hsn: product.hsn || null,
           quantity: 1,
           totalPrice: product?.discountedPrice,
+          options: [{ label: "Size", value: sizeInfo }],
         },
       ];
 
@@ -313,50 +340,36 @@ const ProductDetails = () => {
 
       if (!paymentSessionId) {
         toast.error("Payment session not generated");
-        setImageUploadLoader(false);
         return;
       }
 
-      // Store order data in localStorage for order-success page
       localStorage.setItem("pendingOrderId", backendOrderId);
       localStorage.setItem("pendingCashfreeOrderId", cashfreeOrderId);
       localStorage.setItem("pendingOrderAmount", product?.discountedPrice);
 
-      // Hide cart UI and show checkout
       setShowProductUI(false);
-      setImageUploadLoader(false);
 
       const cashfree = await load({ mode: "production" });
 
-      // Embedded checkout with proper callback structure
-      const checkoutOptions = {
-        paymentSessionId: paymentSessionId,
-        redirectTarget: document.getElementById("cashfree-dropin"), // Your embedded div
-      };
-
-      cashfree.checkout(checkoutOptions).then((result) => {
-        if (result.error) {
-          console.error("SDK Error:", result.error);
-          // toast.error(result.error.message);
-          setShowProductUI(true);
-        }
-
-        // If the payment is completed (success or failure)
-        if (result.paymentDetails) {
-          console.log("Payment completed, checking status...");
-          // Force redirect to your success page
-          window.location.href = `/order-success?order_id=${cashfreeOrderId}`;
-        }
-
-        if (result.redirect) {
-          console.log("SDK handled redirection automatically");
-        }
-      });
+      cashfree
+        .checkout({
+          paymentSessionId,
+          redirectTarget: document.getElementById("cashfree-dropin"),
+        })
+        .then((result) => {
+          if (result?.paymentDetails) {
+            window.location.href = `/order-success?order_id=${cashfreeOrderId}`;
+          } else if (result?.error) {
+            toast.error("Payment failed");
+            setShowProductUI(true);
+          }
+        });
     } catch (error) {
       console.error("Payment error:", error);
       toast.error("Failed to initiate payment");
-      setImageUploadLoader(false);
       setShowProductUI(true);
+    } finally {
+      setImageUploadLoader(false);
     }
   };
 
@@ -481,10 +494,10 @@ const ProductDetails = () => {
                     {product?.configuration[0].options.map((s) => (
                       <button
                         key={s.value}
+                        onClick={() => handleSizeSelect(s.value)}
                         className={`${styles.sizeBtn} ${
                           selectedSize === s.value ? styles.activeSize : ""
                         }`}
-                        onClick={() => handleSizeSelect(s.value)}
                       >
                         {s.label}
                       </button>
@@ -553,8 +566,7 @@ const ProductDetails = () => {
                     <button
                       key={s.value}
                       onClick={() => {
-                        handleSizeSelect(s.value, true);
-                        setShowSizeSheet(false);
+                        handleSizeSelect(s.value);
                       }}
                       className={`${styles.sizeBtn} ${
                         selectedSize === s.value ? styles.activeSize : ""
