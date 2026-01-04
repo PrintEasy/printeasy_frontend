@@ -100,6 +100,8 @@ const Cart = () => {
     }
   };
 
+
+  console.log(cartItems[0]?.productImageUrl,"djsdjsduiuuiuui")
   const orderPayloadItems = cartItems.map((item) => ({
     name: item.name,
     sku: item.sku || item.productId,
@@ -107,7 +109,7 @@ const Cart = () => {
     quantity: item.quantity,
     categoryId: item.categoryId,
     isCustomizable: !!item.isCustomizable,
-    productImageUrl: item?.fullProductUrl,
+    productImageUrl: item?.renderedImageUrl,
     discount: item.discount || 0,
     tax: item.tax || 0,
     hsn: item.hsn || null,

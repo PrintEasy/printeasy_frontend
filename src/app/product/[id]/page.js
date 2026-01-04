@@ -118,7 +118,7 @@ const ProductDetails = () => {
       totalPrice: (product.discountedPrice || product.basePrice) * quantity,
       isCustomizable: product.isCustomizable,
       productImageUrl: capturedImageUrl || product.productImages?.[0] || "",
-      renderedImageUrl: capturedImageUrl,
+      renderedImageUrl: product.productImages?.[0],
       dimensions: {
         length: product.dimension?.length || 0,
         width: product.dimension?.width || 0,
