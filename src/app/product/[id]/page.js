@@ -21,6 +21,7 @@ import ShirtEditor from "@/component/shirtEditor/ShirtEditor";
 import { load } from "@cashfreepayments/cashfree-js";
 import DynamicModal from "@/component/Modal/Modal";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
+import { createSlug } from "@/app/helper";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -192,28 +193,34 @@ const ProductDetails = () => {
     }
   };
 
-  const handleShare = async () => {
-    const shareUrl = window.location.href;
-    const title = product?.name || "Check this out!";
-    const text = `${title}`;
 
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title,
-          text,
-          url: shareUrl,
-        });
-      } catch (error) {
-        console.log("Share cancelled", error);
-      }
-    } else {
-      window.open(
-        `https://wa.me/?text=${encodeURIComponent(`${title}\n${shareUrl}`)}`,
-        "_blank"
-      );
+  
+  const handleShare = async () => {
+  if (!product?.name) return;
+
+  const slug = createSlug(product?.slug);
+  const shareUrl = `https://onrise.in/product/${slug}`;
+  const title = product.name;
+  const text = title;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title,
+        text,
+        url: shareUrl,
+      });
+    } catch (error) {
+      console.log("Share cancelled", error);
     }
-  };
+  } else {
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(`${title}\n${shareUrl}`)}`,
+      "_blank"
+    );
+  }
+};
+
 
   // --- Effects ---
 
