@@ -1,12 +1,10 @@
-import React from 'react'
-import OrderRedirect from './OrderRedirect'
+import React, { Suspense } from "react";
+import OrderRedirect from "./OrderRedirect";
 
-const page = () => {
+export default function Page() {
   return (
-    <div>
-     <OrderRedirect/>
-    </div>
-  )
+    <Suspense fallback={<div>Loading payment status...</div>}>
+      <OrderRedirect />
+    </Suspense>
+  );
 }
-
-export default page
