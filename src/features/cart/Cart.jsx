@@ -204,7 +204,7 @@ const Cart = () => {
           // toast.error(result.error.message);
           setShowCartUI(true);
         }
-        const sessionKey = `payment_redirect_${normalizedData.cashfreeOrderId}`;
+        const sessionKey = `payment_redirect_${cashfreeOrderId}`;
 
         if (result.paymentDetails) {
           window.location.href = `https://onrise.in/order-redirect?sessionKey=${sessionKey}&order_id=${cashfreeOrderId}`;
