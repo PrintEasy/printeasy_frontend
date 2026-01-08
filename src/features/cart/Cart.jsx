@@ -28,7 +28,7 @@ const Cart = () => {
   const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
   const [cartLoader, setCartLodaer] = useState(false);
   const [showCartUI, setShowCartUI] = useState(true);
-
+  
 
 
   const handleContinue = () => {
@@ -204,9 +204,10 @@ const Cart = () => {
           // toast.error(result.error.message);
           setShowCartUI(true);
         }
+        const sessionKey = `payment_redirect_${normalizedData.cashfreeOrderId}`;
 
         if (result.paymentDetails) {
-          window.location.href = `/order-redirect?order_id=${cashfreeOrderId}`;
+          window.location.href = `/order-redirect?sessionKey=${sessionKey}&order_id=${cashfreeOrderId}`;
         }
 
         if (result.redirect) {
