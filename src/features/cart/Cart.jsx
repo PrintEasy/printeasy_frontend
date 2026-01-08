@@ -207,7 +207,7 @@ const Cart = () => {
         const sessionKey = `payment_redirect_${normalizedData.cashfreeOrderId}`;
 
         if (result.paymentDetails) {
-          window.location.href = `/order-redirect?sessionKey=${sessionKey}&order_id=${cashfreeOrderId}`;
+          window.location.href = `https://onrise.in/order-redirect?sessionKey=${sessionKey}&order_id=${cashfreeOrderId}`;
         }
 
         if (result.redirect) {
