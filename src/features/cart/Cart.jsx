@@ -72,7 +72,7 @@ const Cart = () => {
 
   const getAddressList = async () => {
     try {
-      const res = await api.get(/v1/address/all, {
+      const res = await api.get(`/v1/address/all`, {
         headers: {
           "x-api-key":
             "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
