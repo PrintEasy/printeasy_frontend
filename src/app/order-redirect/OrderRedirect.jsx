@@ -6,8 +6,6 @@ import styles from "./orderRedirect.module.scss";
 import api from "@/axiosInstance/axiosInstance";
 import { db } from "@/lib/db";
 
-
-
 const POLLING_INTERVAL = 3000;
 const MAX_POLLING_TIME = 60 * 1000;
 
@@ -16,13 +14,14 @@ export default function HandlePaymentRedirect() {
   const searchParams = useSearchParams();
 
   const orderId = searchParams.get("order_id");
-  const pollingRef = (useRef < NodeJS.Timeout) | (null > null);
-  const startTimeRef = useRef < number > Date.now();
 
-  const [status, setStatus] = useState < PaymentStatus > "processing";
+  const pollingRef = useRef(null);
+  const startTimeRef = useRef(Date.now());
+
+  const [status, setStatus] = useState("processing");
 
   // ✅ CHECK ORDER STATUS
-  const checkOrderStatus = async (orderId) => {
+  const checkOrderStatus = async () => {
     try {
       const response = await api.get(
         `/v1/payment/order-status?orderId=${orderId}`,
@@ -34,50 +33,44 @@ export default function HandlePaymentRedirect() {
         }
       );
 
-      console.log("ORDER STATUS FULL RESPONSE:", response.data);
+      console.log("ORDER STATUS RESPONSE:", response.data);
 
       if (!response.data?.success) return;
 
-      const orderData = response.data.data; // ✅ IMPORTANT
-      const orderStatus = orderData.status; // ✅ confirmed
-
+      const orderStatus = response.data.data.status;
       console.log("ORDER STATUS:", orderStatus);
 
       // ✅ SUCCESS
       if (orderStatus === "confirmed") {
-        if (pollingRef.current) clearInterval(pollingRef.current);
+        clearInterval(pollingRef.current);
 
         setStatus("confirmed");
-        setLoading(false);
 
-       
-
-        // clear local data
         localStorage.removeItem("pendingOrderId");
         localStorage.removeItem("pendingCashfreeOrderId");
         localStorage.removeItem("pendingOrderAmount");
 
         await db.cart.clear();
-
         return;
       }
 
       // ❌ FAILED
       if (orderStatus === "failed" || orderStatus === "cancelled") {
-        if (pollingRef.current) clearInterval(pollingRef.current);
-
+        clearInterval(pollingRef.current);
         setStatus("failed");
-        setLoading(false);
-
-        
-
         return;
       }
 
-      // ⏳ still pending → keep polling
-      console.log("Payment still pending...");
+      // ⏱ TIMEOUT CHECK
+      const elapsed = Date.now() - startTimeRef.current;
+      if (elapsed > MAX_POLLING_TIME) {
+        clearInterval(pollingRef.current);
+        setStatus("timeout");
+      }
     } catch (error) {
-      console.error("Order status check error:", error);
+      console.error("Order status error:", error);
+      clearInterval(pollingRef.current);
+      setStatus("error");
     }
   };
 
@@ -85,12 +78,17 @@ export default function HandlePaymentRedirect() {
   useEffect(() => {
     if (!orderId) {
       setStatus("error");
-      
       router.push("/cart");
       return;
     }
 
-    pollingRef.current = setInterval(checkOrderStatus, POLLING_INTERVAL);
+    // check immediately
+    checkOrderStatus();
+
+    pollingRef.current = setInterval(
+      checkOrderStatus,
+      POLLING_INTERVAL
+    );
 
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current);
@@ -108,28 +106,18 @@ export default function HandlePaymentRedirect() {
         </div>
       )}
 
-      {/* ✅ SUCCESS SLIDE */}
+      {/* ✅ SUCCESS */}
       {status === "confirmed" && (
         <div className={styles.successSlide}>
           <div className={styles.successIcon}>✓</div>
-
-          <h2 className={styles.successTitle}>Payment Successful</h2>
-          <p className={styles.successSubtitle}>
-            Your order has been placed successfully.
-          </p>
+          <h2>Payment Successful</h2>
+          <p>Your order has been placed successfully.</p>
 
           <div className={styles.successActions}>
-            <button
-              className={styles.primaryBtn}
-              onClick={() => router.push("/orders")}
-            >
+            <button onClick={() => router.push("/orders")}>
               View Orders
             </button>
-
-            <button
-              className={styles.secondaryBtn}
-              onClick={() => router.push("/")}
-            >
+            <button onClick={() => router.push("/")}>
               Continue Shopping
             </button>
           </div>
@@ -150,12 +138,8 @@ export default function HandlePaymentRedirect() {
         <div className={styles.timeout}>
           <div className={styles.timeoutIcon}>⏱</div>
           <h2>Verification Pending</h2>
-          <p>Please check your orders page after some time.</p>
-
-          <button
-            className={styles.primaryBtn}
-            onClick={() => router.push("/orders")}
-          >
+          <p>Please check your orders page.</p>
+          <button onClick={() => router.push("/orders")}>
             Go to Orders
           </button>
         </div>
