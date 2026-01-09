@@ -1,28 +1,98 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import styles from "./orderRedirect.module.scss";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import api from "@/axiosInstance/axiosInstance";
 import { db } from "@/lib/db";
+import styles from "./orderRedirect.module.scss";
 
-const POLLING_INTERVAL = 3000;
-const MAX_POLLING_TIME = 60 * 1000;
-
-export default function HandlePaymentRedirect() {
+export default function OrderRedirect() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  const orderId = searchParams.get("order_id");
-
-  const pollingRef = useRef(null);
-  const startTimeRef = useRef(Date.now());
-
+  const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("processing");
+  const pollingRef = useRef(null);
+  const attemptsRef = useRef(0);
+  const maxAttempts = 30; // Max 30 attempts (30 seconds with 1s interval)
 
-  // ✅ CHECK ORDER STATUS
-  const checkOrderStatus = async () => {
+  useEffect(() => {
+    const handleRedirect = async () => {
+      try {
+        // Get order_id from URL (Cashfree redirects with order_id)
+        const cashfreeOrderId = searchParams.get("order_id");
+        const backendOrderId = localStorage.getItem("pendingOrderId");
+
+        console.log("Order redirect page loaded:", {
+          cashfreeOrderId,
+          backendOrderId,
+        });
+
+        if (!cashfreeOrderId && !backendOrderId) {
+          console.error("No order IDs found");
+          toast.error("Order information not found");
+          setStatus("error");
+          setLoading(false);
+          setTimeout(() => router.push("/cart?error=no_order_data"), 2000);
+          return;
+        }
+
+        // Start polling backend for order status
+        pollOrderStatus(backendOrderId);
+      } catch (error) {
+        console.error("Redirect error:", error);
+        toast.error("An error occurred");
+        setStatus("error");
+        setLoading(false);
+        setTimeout(() => router.push("/cart?error=processing_error"), 2000);
+      }
+    };
+
+    handleRedirect();
+
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current);
+    };
+  }, [searchParams, router]);
+
+  const pollOrderStatus = (orderId) => {
+    if (!orderId) {
+      console.error("No order ID for polling");
+      setStatus("error");
+      setLoading(false);
+      return;
+    }
+
+    console.log("Starting to poll order status for:", orderId);
+    attemptsRef.current = 0;
+    
+    // Check immediately first
+    checkOrderStatus(orderId);
+
+    // Then poll every second
+    pollingRef.current = setInterval(() => {
+      attemptsRef.current += 1;
+     
+      
+      if (attemptsRef.current >= maxAttempts) {
+        clearInterval(pollingRef.current);
+        console.log("Max polling attempts reached");
+        setStatus("timeout");
+        toast.warning("Payment verification taking longer than expected. Please check your orders.");
+        setLoading(false);
+        setTimeout(() => router.push("/orders"), 3000);
+        return;
+      }
+      
+      checkOrderStatus(orderId);
+    }, 1000); // Poll every 1 second
+  };
+
+  const checkOrderStatus = async (orderId) => {
     try {
+      console.log("Checking order status:", orderId);
+      
       const response = await api.get(
         `/v1/payment/order-status?orderId=${orderId}`,
         {
@@ -33,126 +103,112 @@ export default function HandlePaymentRedirect() {
         }
       );
 
-      console.log("ORDER STATUS RESPONSE:", response.data);
+      console.log("Order status response:", response.data);
 
-      if (!response.data?.success) return;
+      if (response.data.success) {
+        const orderData = response.data.data;
+        const orderStatus = orderData.status;
 
-      const orderStatus = response.data.data.status;
-      console.log("ORDER STATUS:", orderStatus);
+        console.log("Order status:", orderStatus);
 
-      // ✅ SUCCESS
-      if (orderStatus === "confirmed") {
-        clearInterval(pollingRef.current);
+        // Success - Order confirmed
+        if (orderStatus === "confirmed") {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setStatus("success");
+          toast.success("Payment successful!");
+          
+          // Clear localStorage
+          localStorage.removeItem("pendingOrderId");
+          localStorage.removeItem("pendingCashfreeOrderId");
+          localStorage.removeItem("pendingOrderAmount");
+          
+          // Clear cart
+          await db.cart.clear();
+          
+          setLoading(false);
+          setTimeout(() => router.push("/order-success"), 1500);
+          return;
+        }
 
-        setStatus("confirmed");
+        // Failed or Cancelled
+        if (orderStatus === "CANCELLED" || orderStatus === "FAILED") {
+          if (pollingRef.current) clearInterval(pollingRef.current);
+          setStatus("failed");
+          toast.error("Payment failed or was cancelled");
+          
+          // Clear localStorage
+          localStorage.removeItem("pendingOrderId");
+          localStorage.removeItem("pendingCashfreeOrderId");
+          localStorage.removeItem("pendingOrderAmount");
+          
+          setLoading(false);
+          setTimeout(() => router.push("/cart?error=payment_failed"), 2000);
+          return;
+        }
 
-        localStorage.removeItem("pendingOrderId");
-        localStorage.removeItem("pendingCashfreeOrderId");
-        localStorage.removeItem("pendingOrderAmount");
-
-        await db.cart.clear();
-        return;
-      }
-
-      // ❌ FAILED
-      if (orderStatus === "failed" || orderStatus === "cancelled") {
-        clearInterval(pollingRef.current);
-        setStatus("failed");
-        return;
-      }
-
-      // ⏱ TIMEOUT CHECK
-      const elapsed = Date.now() - startTimeRef.current;
-      if (elapsed > MAX_POLLING_TIME) {
-        clearInterval(pollingRef.current);
-        setStatus("timeout");
+        // Still pending - continue polling
+        console.log("Order still pending, continuing to poll...");
       }
     } catch (error) {
-      console.error("Order status error:", error);
-      clearInterval(pollingRef.current);
-      setStatus("error");
+      console.error("Status check error:", error);
+      // Don't stop polling on network errors
+      if (error.response?.status === 404) {
+        console.log("Order not found yet, continuing to poll...");
+      }
     }
   };
 
-  // 🔁 START POLLING
-  useEffect(() => {
-    if (!orderId) {
-      setStatus("error");
-      router.push("/cart");
-      return;
-    }
-
-    // check immediately
-    checkOrderStatus();
-
-    pollingRef.current = setInterval(
-      checkOrderStatus,
-      POLLING_INTERVAL
-    );
-
-    return () => {
-      if (pollingRef.current) clearInterval(pollingRef.current);
-    };
-  }, [orderId]);
-
   return (
     <div className={styles.container}>
-      {/* PROCESSING */}
-      {status === "processing" && (
-        <div className={styles.processing}>
-          <div className={styles.spinner} />
-          <h2>Processing Payment</h2>
-          <p>Please wait while we confirm your payment</p>
-        </div>
-      )}
-
-      {/* ✅ SUCCESS */}
-      {status === "confirmed" && (
-        <div className={styles.successSlide}>
-          <div className={styles.successIcon}>✓</div>
-          <h2>Payment Successful</h2>
-          <p>Your order has been placed successfully.</p>
-
-          <div className={styles.successActions}>
-            <button onClick={() => router.push("/orders")}>
-              View Orders
-            </button>
-            <button onClick={() => router.push("/")}>
-              Continue Shopping
-            </button>
+      <ToastContainer />
+      <div className={styles.card}>
+        {loading && status === "processing" && (
+          <div className={styles.content}>
+            <div className={styles.spinner}></div>
+            <h2 className={styles.title}>Processing Payment</h2>
+            <p className={styles.subtitle}>
+              Please wait while we confirm your payment...
+            </p>
+            <p className={styles.note}>
+              This may take a few moments. Do not close this page.
+            </p>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ❌ FAILED */}
-      {status === "failed" && (
-        <div className={styles.failed}>
-          <div className={styles.failedIcon}>✕</div>
-          <h2>Payment Failed</h2>
-          <p>Redirecting to cart...</p>
-        </div>
-      )}
+        {status === "success" && (
+          <div className={styles.successContent}>
+            <div className={styles.successIcon}>✓</div>
+            <h2 className={styles.successTitle}>Payment Successful!</h2>
+            <p className={styles.successSubtitle}>Redirecting...</p>
+          </div>
+        )}
 
-      {/* ⏱ TIMEOUT */}
-      {status === "timeout" && (
-        <div className={styles.timeout}>
-          <div className={styles.timeoutIcon}>⏱</div>
-          <h2>Verification Pending</h2>
-          <p>Please check your orders page.</p>
-          <button onClick={() => router.push("/orders")}>
-            Go to Orders
-          </button>
-        </div>
-      )}
+        {status === "failed" && (
+          <div className={styles.failedContent}>
+            <div className={styles.failedIcon}>✕</div>
+            <h2 className={styles.failedTitle}>Payment Failed</h2>
+            <p className={styles.failedSubtitle}>Returning to cart...</p>
+          </div>
+        )}
 
-      {/* ⚠ ERROR */}
-      {status === "error" && (
-        <div className={styles.error}>
-          <div className={styles.errorIcon}>!</div>
-          <h2>Something went wrong</h2>
-          <p>Redirecting to cart...</p>
-        </div>
-      )}
+        {status === "timeout" && (
+          <div className={styles.errorContent}>
+            <div className={styles.errorIcon}>⏱</div>
+            <h2 className={styles.errorTitle}>Verification In Progress</h2>
+            <p className={styles.errorSubtitle}>
+              Please check your orders page...
+            </p>
+          </div>
+        )}
+
+        {status === "error" && (
+          <div className={styles.errorContent}>
+            <div className={styles.errorIcon}>!</div>
+            <h2 className={styles.errorTitle}>Error</h2>
+            <p className={styles.errorSubtitle}>Returning to cart...</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
