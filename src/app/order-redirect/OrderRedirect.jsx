@@ -2,9 +2,11 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import styles from "./handlePaymentRedirect.module.scss";
-import axios from "axios";
-import { db } from "@/lib/indexedDb";
+import styles from "./orderRedirect.module.scss";
+import api from "@/axiosInstance/axiosInstance";
+import { db } from "@/lib/db";
+
+
 
 const POLLING_INTERVAL = 3000;
 const MAX_POLLING_TIME = 60 * 1000;
