@@ -2,12 +2,9 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { toast } from "react-hot-toast";
 import styles from "./handlePaymentRedirect.module.scss";
 import axios from "axios";
 import { db } from "@/lib/indexedDb";
-
-
 
 const POLLING_INTERVAL = 3000;
 const MAX_POLLING_TIME = 60 * 1000;
@@ -17,65 +14,68 @@ export default function HandlePaymentRedirect() {
   const searchParams = useSearchParams();
 
   const orderId = searchParams.get("order_id");
-  const pollingRef = useRef<NodeJS.Timeout | null>(null);
-  const startTimeRef = useRef<number>(Date.now());
+  const pollingRef = (useRef < NodeJS.Timeout) | (null > null);
+  const startTimeRef = useRef < number > Date.now();
 
-  const [status, setStatus] = useState<PaymentStatus>("processing");
+  const [status, setStatus] = useState < PaymentStatus > "processing";
 
   // ✅ CHECK ORDER STATUS
-  const checkOrderStatus = async () => {
+  const checkOrderStatus = async (orderId) => {
     try {
-      if (!orderId) throw new Error("Order ID missing");
-
-      const { data } = await axios.get(
-        `/api/payment/status?orderId=${orderId}`
+      const response = await api.get(
+        `/v1/payment/order-status?orderId=${orderId}`,
+        {
+          headers: {
+            "x-api-key":
+              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
+          },
+        }
       );
 
-      const orderStatus = data?.status;
+      console.log("ORDER STATUS FULL RESPONSE:", response.data);
 
-      // 🟢 CONFIRMED
+      if (!response.data?.success) return;
+
+      const orderData = response.data.data; // ✅ IMPORTANT
+      const orderStatus = orderData.status; // ✅ confirmed
+
+      console.log("ORDER STATUS:", orderStatus);
+
+      // ✅ SUCCESS
       if (orderStatus === "confirmed") {
         if (pollingRef.current) clearInterval(pollingRef.current);
 
         setStatus("confirmed");
-        toast.success("Payment successful!");
+        setLoading(false);
 
+       
+
+        // clear local data
         localStorage.removeItem("pendingOrderId");
         localStorage.removeItem("pendingCashfreeOrderId");
         localStorage.removeItem("pendingOrderAmount");
 
         await db.cart.clear();
+
         return;
       }
 
-      // 🔴 FAILED
-      if (orderStatus === "failed") {
+      // ❌ FAILED
+      if (orderStatus === "failed" || orderStatus === "cancelled") {
         if (pollingRef.current) clearInterval(pollingRef.current);
 
         setStatus("failed");
-        toast.error("Payment failed");
+        setLoading(false);
 
-        setTimeout(() => router.push("/cart"), 2500);
+        
+
         return;
       }
 
-      // ⏱ TIMEOUT
-      const elapsed = Date.now() - startTimeRef.current;
-      if (elapsed > MAX_POLLING_TIME) {
-        if (pollingRef.current) clearInterval(pollingRef.current);
-
-        setStatus("timeout");
-        toast("Payment verification in progress", { icon: "⏱" });
-      }
+      // ⏳ still pending → keep polling
+      console.log("Payment still pending...");
     } catch (error) {
-      console.error("Payment Status Error:", error);
-
-      if (pollingRef.current) clearInterval(pollingRef.current);
-
-      setStatus("error");
-      toast.error("Something went wrong");
-
-      setTimeout(() => router.push("/cart"), 2000);
+      console.error("Order status check error:", error);
     }
   };
 
@@ -83,7 +83,7 @@ export default function HandlePaymentRedirect() {
   useEffect(() => {
     if (!orderId) {
       setStatus("error");
-      toast.error("Invalid payment redirect");
+      
       router.push("/cart");
       return;
     }
