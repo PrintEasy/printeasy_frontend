@@ -86,7 +86,7 @@ const Cart = () => {
 
   const getOfferData = async () => {
     try {
-      const res = await api.get(/v2/giftreward, {
+      const res = await api.get(`/v2/giftreward`, {
         headers: {
           "x-api-key":
             "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
