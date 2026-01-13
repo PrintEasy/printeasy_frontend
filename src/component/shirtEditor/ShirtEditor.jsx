@@ -11,7 +11,7 @@ import styles from "./shirtEditor.module.scss";
 import Image from "next/image";
 import { COLORS, SIZES } from "@/constants";
 import api from "@/axiosInstance/axiosInstance";
-import { toPng } from "html-to-image";
+import html2canvas from "html2canvas";
 
 import fontIcon from "../../assessts/font.svg";
 import letterIcon from "../../assessts/letter1.svg";
@@ -39,9 +39,10 @@ const ShirtEditor = forwardRef(
     const [fonts, setFonts] = useState([]);
     const [activeTab, setActiveTab] = useState("font");
     const [imageLoaded, setImageLoaded] = useState(false);
-    const [scrollPos, setScrollPos] = useState(0);
     const [fontsLoaded, setFontsLoaded] = useState(false);
     const [showCursor, setShowCursor] = useState(true);
+    const [imageError, setImageError] = useState(false);
+    const [imageDataUrl, setImageDataUrl] = useState(null);
     const loadedFontsRef = useRef(new Set());
 
     const inputRef = useRef(null);
@@ -57,42 +58,167 @@ const ShirtEditor = forwardRef(
       return () => clearInterval(interval);
     }, [isEditing]);
 
+    /* ================= CONVERT IMAGE TO BASE64 FOR iOS ================= */
+    useEffect(() => {
+      if (!product?.canvasImage) return;
+
+      const loadAndConvertImage = async () => {
+        try {
+          console.log("🖼️ Loading image:", product.canvasImage);
+
+          // Method 1: Try loading directly with CORS
+          const img = new window.Image();
+          img.crossOrigin = "anonymous";
+
+          const loadPromise = new Promise((resolve, reject) => {
+            img.onload = () => {
+              console.log("✅ Image loaded with CORS");
+              try {
+                // Convert to base64
+                const canvas = document.createElement("canvas");
+                canvas.width = img.naturalWidth;
+                canvas.height = img.naturalHeight;
+                const ctx = canvas.getContext("2d");
+                ctx.drawImage(img, 0, 0);
+                const dataUrl = canvas.toDataURL("image/png");
+                setImageDataUrl(dataUrl);
+                setImageLoaded(true);
+                setImageError(false);
+                resolve();
+              } catch (err) {
+                console.error("Canvas conversion error:", err);
+                reject(err);
+              }
+            };
+
+            img.onerror = (error) => {
+              console.warn("⚠️ CORS load failed, trying proxy method...");
+              reject(error);
+            };
+
+            // Add timestamp to prevent caching issues on iOS
+            const separator = product.canvasImage.includes("?") ? "&" : "?";
+            img.src = `${product.canvasImage}${separator}_t=${Date.now()}`;
+          });
+
+          try {
+            await loadPromise;
+          } catch (corsError) {
+            // Method 2: Fallback - load without CORS (won't work for capture but shows image)
+            console.log("🔄 Trying fallback load...");
+            const fallbackImg = new window.Image();
+            
+            fallbackImg.onload = () => {
+              console.log("✅ Image loaded (fallback mode)");
+              setImageDataUrl(product.canvasImage);
+              setImageLoaded(true);
+              setImageError(false);
+            };
+
+            fallbackImg.onerror = () => {
+              console.error("❌ All loading methods failed");
+              setImageError(true);
+            };
+
+            fallbackImg.src = product.canvasImage;
+          }
+        } catch (error) {
+          console.error("❌ Image loading error:", error);
+          setImageError(true);
+        }
+      };
+
+      loadAndConvertImage();
+    }, [product?.canvasImage]);
+
     const injectFontCSS = (fontFamily, fontUrl) => {
+      const existingStyle = document.querySelector(
+        `style[data-font="${fontFamily}"]`
+      );
+      if (existingStyle) return;
+
       const style = document.createElement("style");
+      style.setAttribute("data-font", fontFamily);
       style.innerHTML = `
-    @font-face {
-      font-family: '${fontFamily}';
-      src: url('${fontUrl}') format('truetype');
-      font-display: swap;
-    }
-  `;
+        @font-face {
+          font-family: '${fontFamily}';
+          src: url('${fontUrl}') format('truetype');
+          font-display: swap;
+        }
+      `;
       document.head.appendChild(style);
     };
 
-    /* ================= EXPOSE IMAGE CAPTURE ================= */
+    /* ================= IMAGE CAPTURE WITH html2canvas ================= */
     useImperativeHandle(ref, () => ({
       captureImage: async () => {
-        if (!editorRef.current) return null;
+        if (!editorRef.current) {
+          console.error("❌ Editor ref not found");
+          return null;
+        }
 
         try {
+          // Load selected font
           const selectedFontObj = fonts.find((f) => f.family === selectedFont);
-
           if (selectedFontObj) {
             injectFontCSS(selectedFontObj.family, selectedFontObj.downloadUrl);
           }
 
-          // Ensure fonts are loaded before capturing
           await document.fonts.ready;
 
-          return await toPng(editorRef.current, {
-            cacheBust: true,
-            pixelRatio: 2,
-            // This tells the library NOT to fail if it hits a restricted stylesheet
-            skipFonts: false,
+          await new Promise((resolve) => setTimeout(resolve, 500));
+
+          console.log("📷 Capturing with html2canvas...");
+
+          const canvas = await html2canvas(editorRef.current, {
+            allowTaint: true,
+            useCORS: true,
+            scale: 2,
+            backgroundColor: null,
+            logging: true,
+            imageTimeout: 15000,
+            removeContainer: true,
+            // iOS-specific options
+            foreignObjectRendering: false,
+            onclone: (clonedDoc) => {
+              console.log("🔄 Cloning document for capture...");
+              // Ensure all images are loaded in the clone
+              const images = clonedDoc.querySelectorAll("img");
+              images.forEach((img) => {
+                if (!img.complete) {
+                  console.warn("⚠️ Image not complete in clone");
+                }
+              });
+            },
           });
+
+          console.log("✅ Canvas created successfully");
+
+          // Convert canvas to data URL
+          const dataUrl = canvas.toDataURL("image/png", 1.0);
+          console.log("✅ Capture complete!");
+
+          return dataUrl;
         } catch (error) {
-          console.error("Capture failed:", error);
-          return null;
+          console.error("❌ html2canvas capture failed:", error);
+
+          // Fallback method using simpler settings
+          try {
+            console.log("🔄 Trying fallback capture...");
+            await new Promise((resolve) => setTimeout(resolve, 300));
+
+            const canvas = await html2canvas(editorRef.current, {
+              allowTaint: true,
+              useCORS: false,
+              scale: 1,
+              logging: false,
+            });
+
+            return canvas.toDataURL("image/png");
+          } catch (fallbackError) {
+            console.error("❌ Fallback capture also failed:", fallbackError);
+            return null;
+          }
         }
       },
     }));
@@ -109,7 +235,7 @@ const ShirtEditor = forwardRef(
           });
           setFonts(res?.data?.data || []);
         } catch (err) {
-          console.error("Font fetch error:", err);
+          console.error("❌ Font fetch error:", err);
         }
       };
       fetchFonts();
@@ -117,21 +243,39 @@ const ShirtEditor = forwardRef(
 
     useEffect(() => {
       if (!fonts.length) return;
+
       const loadFonts = async () => {
+        console.log(`📚 Loading ${fonts.length} fonts...`);
+
         const fontPromises = fonts.map((font) => {
           if (loadedFontsRef.current.has(font.family)) return Promise.resolve();
-          const fontFace = new FontFace(
-            font.family,
-            `url(${font.downloadUrl})`
-          );
-          return fontFace.load().then((loaded) => {
-            document.fonts.add(loaded);
-            loadedFontsRef.current.add(font.family);
+
+          return new Promise((resolve) => {
+            const fontFace = new FontFace(
+              font.family,
+              `url(${font.downloadUrl})`
+            );
+
+            fontFace
+              .load()
+              .then((loaded) => {
+                document.fonts.add(loaded);
+                loadedFontsRef.current.add(font.family);
+                console.log(`✅ Font loaded: ${font.family}`);
+                resolve();
+              })
+              .catch((err) => {
+                console.warn(`⚠️ Font load failed: ${font.family}`, err);
+                resolve(); // Don't break the chain
+              });
           });
         });
+
         await Promise.all(fontPromises);
         setFontsLoaded(true);
+        console.log("✅ All fonts loaded");
       };
+
       loadFonts();
     }, [fonts]);
 
@@ -142,22 +286,21 @@ const ShirtEditor = forwardRef(
         inputRef.current.setSelectionRange(len, len);
       }
 
-      // Now safe to update state
       setIsEditing(true);
 
-      // Optional scroll (after focus)
-      if (window.innerWidth <= 768) {
+      // iOS scroll fix
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      if (isIOS) {
         setTimeout(() => {
           window.scrollTo({
             top: window.innerHeight * 0.3,
             behavior: "smooth",
           });
-        }, 50);
+        }, 100);
       }
     };
 
     const handleBlur = (e) => {
-      // Keep open if clicking toolbar buttons
       if (e.relatedTarget && editorRef.current?.contains(e.relatedTarget))
         return;
       setIsEditing(false);
@@ -168,10 +311,12 @@ const ShirtEditor = forwardRef(
       setSelectedFont(font.family);
       inputRef.current?.focus();
     };
+
     const onColorSelect = (c) => {
       setSelectedColor(c);
       inputRef.current?.focus();
     };
+
     const onSizeSelect = (s) => {
       setSelectedSize(s);
       inputRef.current?.focus();
@@ -191,74 +336,119 @@ const ShirtEditor = forwardRef(
         style={{ outline: "none" }}
       >
         <div className={styles.img_wrap}>
-          {!imageLoaded && (
+          {!imageLoaded && !imageError && (
             <div className={styles.shimmerWrapper}>
               <div className={styles.shimmer} />
             </div>
           )}
 
-          <Image
-            src={product?.canvasImage}
-            alt="product"
-            width={500}
-            height={600}
-            className={styles.mainImage}
-            priority
-            crossOrigin="anonymous"
-            loading="eager"
-            unoptimized
-            onLoadingComplete={() => setImageLoaded(true)}
-            style={{
-              opacity: imageLoaded ? 1 : 0,
-              transition: "opacity 0.2s ease",
-            }}
-          />
-
-          {product &&
-            (isEditing ? (
-              // <textarea
-              //   ref={inputRef}
-              //   className={`${styles.presetText} ${styles.editInput}`}
-              //   value={text}
-              //   onChange={(e) => setText(e.target.value)}
-              //   onBlur={handleBlur}
-              //   onKeyDown={(e) =>
-              //     e.key === "Enter" && !e.shiftKey && handleBlur({})
-              //   }
-              //   style={dynamicStyles}
-              // />
-
-              <textarea
-                ref={inputRef}
-                className={`${styles.presetText} ${styles.editInput}`}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                style={dynamicStyles}
-                onBlur={handleBlur}
-                inputMode="text"
-              />
-            ) : (
-              <div
-                ref={viewRef}
-                className={styles.presetText}
-                onClick={startTextEditing}
-                style={{ ...dynamicStyles, cursor: "text" }}
+          {imageError && (
+            <div
+              style={{
+                padding: "20px",
+                textAlign: "center",
+                color: "#666",
+                minHeight: "400px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexDirection: "column",
+                background: "#f5f5f5",
+                borderRadius: "8px",
+              }}
+            >
+              <p style={{ fontSize: "48px", marginBottom: "10px" }}>⚠️</p>
+              <p style={{ fontWeight: "bold", marginBottom: "5px" }}>
+                Image Failed to Load
+              </p>
+              <p style={{ fontSize: "12px", color: "#999", marginBottom: "15px" }}>
+                {product?.canvasImage?.substring(0, 60)}...
+              </p>
+              <button
+                onClick={() => window.location.reload()}
+                style={{
+                  padding: "12px 24px",
+                  background: "#000",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: "6px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: "500",
+                }}
               >
-                {text.trim() || "Your Text Here"}
+                Reload Page
+              </button>
+            </div>
+          )}
 
-                <span
-                  style={{
-                    opacity: showCursor ? 1 : 0,
-                    transition: "opacity 0.1s",
-                    marginLeft: "2px",
-                    fontWeight: "100",
-                    color: selectedColor,
-                  }}
+          {imageDataUrl && (
+            <img
+              src={imageDataUrl}
+              alt="product canvas"
+              className={styles.mainImage}
+              onLoad={() => {
+                console.log("✅ Image rendered in DOM");
+                setImageLoaded(true);
+              }}
+              onError={(e) => {
+                console.error("❌ Image render error:", e);
+                setImageError(true);
+              }}
+              style={{
+                opacity: imageLoaded ? 1 : 0,
+                transition: "opacity 0.3s ease",
+                width: "100%",
+                maxWidth: "500px",
+                display: "block",
+                margin: "0 auto",
+              }}
+            />
+          )}
+
+          {product && imageLoaded && (
+            <>
+              {isEditing ? (
+                <textarea
+                  ref={inputRef}
+                  className={`${styles.presetText} ${styles.editInput}`}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  style={dynamicStyles}
+                  onBlur={handleBlur}
+                  inputMode="text"
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
+                  data-gramm="false"
+                  data-gramm_editor="false"
+                  data-enable-grammarly="false"
+                />
+              ) : (
+                <div
+                  ref={viewRef}
+                  className={styles.presetText}
+                  onClick={startTextEditing}
+                  style={{ ...dynamicStyles, cursor: "text" }}
                 >
-                  |
-                </span>
-              </div>
-            ))}
+                  {text.trim() || "Your Text Here"}
+
+                  <span
+                    style={{
+                      opacity: showCursor ? 1 : 0,
+                      transition: "opacity 0.1s",
+                      marginLeft: "2px",
+                      fontWeight: "100",
+                      color: selectedColor,
+                    }}
+                  >
+                    |
+                  </span>
+                </div>
+              )}
+            </>
+          )}
 
           {isEditing && (
             <div
@@ -365,5 +555,7 @@ const ShirtEditor = forwardRef(
     );
   }
 );
+
+ShirtEditor.displayName = "ShirtEditor";
 
 export default ShirtEditor;
