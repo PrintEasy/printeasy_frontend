@@ -253,7 +253,6 @@ const Cart = () => {
           height: showCartUI ? "0" : "100vh",
           display: showCartUI ? "none" : "flex",
           justifyContent: "center",
-          alignItems: "center",
           overflow: "hidden",
         }}
       />

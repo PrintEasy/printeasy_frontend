@@ -305,27 +305,8 @@ const ProductDetails = () => {
 
   const proceedWithPayment = async () => {
     try {
-      setImageUploadLoader(true);
-      let renderedImageUrl = null;
-
-      if (uploadImagePayload) {
-        const uploadRes = await api.post(
-          "/v1/cart/upload-image",
-          { printingImgText: uploadImagePayload },
-          {
-            headers: {
-              "x-api-key":
-                "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
-            },
-          }
-        );
-
-        renderedImageUrl = uploadRes?.data?.data?.renderedImageUrl || null;
-      }
-
       const finalItems = [
         {
-          imageUrl: renderedImageUrl,
           name: product.name,
           sku: product.sku || product.productId,
           productImageUrl: product?.fullProductUrl,
@@ -337,6 +318,13 @@ const ProductDetails = () => {
           quantity: 1,
           totalPrice: product?.discountedPrice,
           options: [{ label: "Size", value: sizeInfo }],
+          printingImgText: {
+            printText: text,
+            textColor: selectedColor,
+            fontFamily: selectedFont,
+            fontSize: selectedSize,
+            illustrationImage: product?.illustrationImage,
+          },
         },
       ];
 
@@ -391,7 +379,7 @@ const ProductDetails = () => {
       toast.error("Failed to initiate payment");
       setShowProductUI(true);
     } finally {
-      setImageUploadLoader(false);
+      setImageUploadLoader(false);  
     }
   };
 
@@ -401,9 +389,8 @@ const ProductDetails = () => {
         id="cashfree-dropin"
         style={{
           width: "100%",
-          height: showProductUI ? "0" : "auto",
-          display: showProductUI ? "none" : "block",
-          display: "flex",
+          height: showProductUI ? "0" : "100vh",
+          display: showProductUI ? "none" : "flex",
           justifyContent: "center",
           overflow: "hidden",
         }}
