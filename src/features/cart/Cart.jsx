@@ -109,7 +109,16 @@ const Cart = () => {
     discount: item.discount || 0,
     tax: item.tax || 0,
     hsn: item.hsn || null,
+    printingImgText: {
+      printText: item?.presetText,
+      textColor: item.textColor || "",
+      fontFamily: item.fontFamily || "",
+      fontSize: item.fontSize || "",
+      illustrationImage: item?.illustrationImage,
+    },
   }));
+
+  console.log(cartItems, "sosospopuuuuuu");
 
   const customizableItem = cartItems.find((item) => item.isCustomizable);
   const uploadImagePayload = customizableItem
@@ -135,7 +144,6 @@ const Cart = () => {
 
         return {
           ...item,
-          printingImgText: uploadImagePayload,
         };
       });
 
@@ -197,19 +205,12 @@ const Cart = () => {
           setShowCartUI(true);
           return;
         }
-
-        // When payment is completed in embedded mode
         if (result.paymentDetails) {
           console.log("Payment completed, details:", result.paymentDetails);
-
-          // Redirect to order-redirect page to poll status
           window.location.href = `/order-redirect?order_id=${cashfreeOrderId}&backend_order_id=${backendOrderId}`;
         }
-
-        // Cashfree SDK handles the redirect automatically after payment
         if (result.redirect) {
           console.log("SDK is redirecting...");
-          // The redirect will go to the return_url configured in backend
         }
       });
     } catch (error) {
@@ -245,12 +246,11 @@ const Cart = () => {
 
   return (
     <>
-      {/* Embedded Cashfree checkout container */}
       <div
         id="cashfree-dropin"
         style={{
           width: "100%",
-          height: showCartUI ? "0" : "10git0vh",
+          height: showCartUI ? "0" : "100vh",
           display: showCartUI ? "none" : "flex",
           justifyContent: "center",
           alignItems: "center",
