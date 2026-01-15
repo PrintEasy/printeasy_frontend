@@ -74,7 +74,7 @@ export default function OrderRedirect() {
         clearInterval(pollingRef.current);
         setStatus("success");
         toast.success("Payment successful!");
-
+        localStorage.setItem("orderId",orderStatus?.orderId)
         localStorage.removeItem("pendingOrderId");
         localStorage.removeItem("pendingCashfreeOrderId");
         localStorage.removeItem("pendingOrderAmount");

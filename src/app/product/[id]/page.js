@@ -53,6 +53,8 @@ const ProductDetails = () => {
   const [pendingAction, setPendingAction] = useState(null);
   const [editorReady, setEditorReady] = useState(false);
 
+  console.log(sizeInfo,"dbjsdbjsduuiuiuuiui")
+
   useEffect(() => {
     if (product) {
       setText(product.presetText || "Empty Text");
@@ -96,7 +98,7 @@ const ProductDetails = () => {
     await processAddToCart(selectedSize);
   };
 
-  const processAddToCart = async (sizeToUse) => {
+  const processAddToCart = async (sizeInfo) => {
     setLoader(true);
     let capturedImageUrl = "";
 
@@ -126,7 +128,7 @@ const ProductDetails = () => {
         height: product.dimension?.height || 0,
         weight: product.dimension?.weight || 0,
       },
-      options: [{ label: "Size", value: sizeToUse }],
+      options: sizeInfo,
       addedAt: new Date().toISOString(),
       presetText: text,
       textColor: selectedColor,
@@ -309,15 +311,14 @@ const ProductDetails = () => {
         {
           name: product.name,
           sku: product.sku || product.productId,
-          productImageUrl: product?.fullProductUrl,
+          totalPrice: product?.discountedPrice,
+          quantity: 1,
           categoryId: product.categoryId,
           isCustomizable: !!product.isCustomizable,
+          productImageUrl: product?.fullProductUrl,
           discount: product.discount || 0,
           tax: product.tax || 0,
           hsn: product.hsn || null,
-          quantity: 1,
-          totalPrice: product?.discountedPrice,
-          options: [{ label: "Size", value: sizeInfo }],
           printingImgText: {
             printText: text,
             textColor: selectedColor,
