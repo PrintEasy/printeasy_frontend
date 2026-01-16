@@ -269,7 +269,7 @@ const ProductDetails = () => {
     }
     try {
       const res = await api.post(
-        /v2/wishlist,
+        `/v2/wishlist`,
         { productId: product.id },
         {
           headers: {
