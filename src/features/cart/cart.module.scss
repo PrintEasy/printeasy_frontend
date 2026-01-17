@@ -16,7 +16,6 @@
 
 .cartPage {
   min-height: 100vh;
-  background-color: #f8f8f8;
   padding: 16px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
@@ -230,6 +229,10 @@
   @media (max-width: 480px) {
     font-size: 16px;
   }
+}
+
+.cartsuggestion{
+  margin-top: 4rem;
 }
 
 /* Checkout Button */

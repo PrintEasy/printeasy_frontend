@@ -16,6 +16,8 @@ import { load } from "@cashfreepayments/cashfree-js";
 import DynamicModal from "@/component/Modal/Modal";
 import LoginForm from "../signup/LogIn/LoginForm";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
+import ProductSection from "../Main/ProductSection/ProductSection";
+import CartSuggestion from "@/component/CartSuggetion/CartSuggestion";
 
 const Cart = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -342,6 +344,8 @@ const Cart = () => {
                     offerData={offerData}
                   />
                 </div>
+
+                
               </div>
 
               <DynamicModal
@@ -361,6 +365,11 @@ const Cart = () => {
               >
                 <AddToBagLoader />
               </DynamicModal>
+
+
+                  <div className={styles.cartsuggestion}>
+              <CartSuggestion/>
+                  </div>
             </>
           ) : (
             <NoResult
