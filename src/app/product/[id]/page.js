@@ -53,8 +53,8 @@ const ProductDetails = () => {
   const [pendingAction, setPendingAction] = useState(null);
   const [editorReady, setEditorReady] = useState(false);
 
-  console.log(sizeInfo, "dbjsdbjsduuiuiuuiui");
 
+  
   useEffect(() => {
     if (product) {
       setText(product.presetText || "Empty Text");
@@ -115,7 +115,7 @@ const ProductDetails = () => {
                 "⏱️ Image capture timeout - proceeding without custom image",
               );
               resolve(null);
-            }, 5000), // 5 second timeout
+            }, 10000), // 5 second timeout
         );
 
         capturedImageUrl = await Promise.race([capturePromise, timeoutPromise]);

@@ -100,6 +100,8 @@ const Cart = () => {
     }
   };
 
+  console.log(cartItems,"sososppppoooooo")
+
   const orderPayloadItems = cartItems.map((item) => ({
     name: item.name,
     sku: item.sku || item.productId,
@@ -108,6 +110,7 @@ const Cart = () => {
     categoryId: item.categoryId,
     isCustomizable: !!item.isCustomizable,
     productImageUrl: item?.renderedImageUrl,
+    sizeInfo:item?.options,
     discount: item.discount || 0,
     tax: item.tax || 0,
     hsn: item.hsn || null,
@@ -117,10 +120,10 @@ const Cart = () => {
       fontFamily: item.fontFamily || "",
       fontSize: item.fontSize || "",
       illustrationImage: item?.illustrationImage,
+      shirtImage:item?.canvasImage
     },
   }));
 
-  console.log(cartItems, "sosospopuuuuuu");
 
   const customizableItem = cartItems.find((item) => item.isCustomizable);
   const uploadImagePayload = customizableItem

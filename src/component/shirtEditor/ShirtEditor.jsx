@@ -52,38 +52,28 @@ const ShirtEditor = forwardRef(
 
     /* ================= NOTIFY PARENT WHEN EDITOR IS READY ================= */
     useEffect(() => {
-      if (imageLoaded && fontsLoaded) {
-        console.log("✅ ShirtEditor fully ready");
-        onReady?.();
-      }
+      if (imageLoaded && fontsLoaded) onReady?.();
     }, [imageLoaded, fontsLoaded, onReady]);
 
     /* ================= BLINKING CURSOR LOGIC ================= */
     useEffect(() => {
       if (isEditing) return;
-      const interval = setInterval(() => {
-        setShowCursor((prev) => !prev);
-      }, 530);
+      const interval = setInterval(() => setShowCursor((prev) => !prev), 530);
       return () => clearInterval(interval);
     }, [isEditing]);
 
-    /* ================= CONVERT IMAGE TO BASE64 FOR iOS ================= */
+    /* ================= IMAGE LOAD & CONVERT TO BASE64 ================= */
     useEffect(() => {
       if (!product?.canvasImage) return;
 
       const loadAndConvertImage = async () => {
         try {
-          console.log("🖼️ Loading image:", product.canvasImage);
-
-          // Method 1: Try loading directly with CORS
           const img = new window.Image();
           img.crossOrigin = "anonymous";
 
           const loadPromise = new Promise((resolve, reject) => {
             img.onload = () => {
-              console.log("✅ Image loaded with CORS");
               try {
-                // Convert to base64
                 const canvas = document.createElement("canvas");
                 canvas.width = img.naturalWidth;
                 canvas.height = img.naturalHeight;
@@ -95,45 +85,18 @@ const ShirtEditor = forwardRef(
                 setImageError(false);
                 resolve();
               } catch (err) {
-                console.error("Canvas conversion error:", err);
                 reject(err);
               }
             };
-
-            img.onerror = (error) => {
-              console.warn("⚠️ CORS load failed, trying proxy method...");
-              reject(error);
-            };
-
-            // Add timestamp to prevent caching issues on iOS
-            const separator = product.canvasImage.includes("?") ? "&" : "?";
-            img.src = `${product.canvasImage}${separator}_t=${Date.now()}`;
+            img.onerror = reject;
+            img.src = `${product.canvasImage}?_t=${Date.now()}`;
           });
 
-          try {
-            await loadPromise;
-          } catch (corsError) {
-            // Method 2: Fallback - load without CORS (won't work for capture but shows image)
-            console.log("🔄 Trying fallback load...");
-            const fallbackImg = new window.Image();
-
-            fallbackImg.onload = () => {
-              console.log("✅ Image loaded (fallback mode)");
-              setImageDataUrl(product.canvasImage);
-              setImageLoaded(true);
-              setImageError(false);
-            };
-
-            fallbackImg.onerror = () => {
-              console.error("❌ All loading methods failed");
-              setImageError(true);
-            };
-
-            fallbackImg.src = product.canvasImage;
-          }
-        } catch (error) {
-          console.error("❌ Image loading error:", error);
-          setImageError(true);
+          await loadPromise;
+        } catch {
+          setImageDataUrl(product.canvasImage);
+          setImageLoaded(true);
+          setImageError(false);
         }
       };
 
@@ -141,11 +104,7 @@ const ShirtEditor = forwardRef(
     }, [product?.canvasImage]);
 
     const injectFontCSS = (fontFamily, fontUrl) => {
-      const existingStyle = document.querySelector(`
-        style[data-font="${fontFamily}"],
-      `);
-      if (existingStyle) return;
-
+      if (document.querySelector(`style[data-font="${fontFamily}"]`)) return;
       const style = document.createElement("style");
       style.setAttribute("data-font", fontFamily);
       style.innerHTML = `
@@ -158,126 +117,36 @@ const ShirtEditor = forwardRef(
       document.head.appendChild(style);
     };
 
-    /* ================= IMAGE CAPTURE WITH html2canvas ================= */
-    // useImperativeHandle(ref, () => ({
-    //   captureImage: async () => {
-    //     if (!editorRef.current) {
-    //       console.error("❌ Editor ref not found");
-    //       return null;
-    //     }
-
-    //     try {
-    //       // Load selected font
-    //       const selectedFontObj = fonts.find((f) => f.family === selectedFont);
-    //       if (selectedFontObj) {
-    //         injectFontCSS(selectedFontObj.family, selectedFontObj.downloadUrl);
-    //       }
-
-    //       await document.fonts.ready;
-
-    //       await new Promise((resolve) => setTimeout(resolve, 500));
-
-    //       console.log("📷 Capturing with html2canvas...");
-
-    //       const canvas = await html2canvas(editorRef.current, {
-    //         allowTaint: true,
-    //         useCORS: true,
-    //         scale: 2,
-    //         backgroundColor: null,
-    //         logging: true,
-    //         imageTimeout: 15000,
-    //         removeContainer: true,
-    //         // iOS-specific options
-    //         foreignObjectRendering: false,
-    //         onclone: (clonedDoc) => {
-    //           console.log("🔄 Cloning document for capture...");
-    //           // Ensure all images are loaded in the clone
-    //           const images = clonedDoc.querySelectorAll("img");
-    //           images.forEach((img) => {
-    //             if (!img.complete) {
-    //               console.warn("⚠️ Image not complete in clone");
-    //             }
-    //           });
-    //         },
-    //       });
-
-    //       console.log("✅ Canvas created successfully");
-
-    //       // Convert canvas to data URL
-    //       const dataUrl = canvas.toDataURL("image/png", 1.0);
-    //       console.log("✅ Capture complete!");
-
-    //       return dataUrl;
-    //     } catch (error) {
-    //       console.error("❌ html2canvas capture failed:", error);
-
-    //       // Fallback method using simpler settings
-    //       try {
-    //         console.log("🔄 Trying fallback capture...");
-    //         await new Promise((resolve) => setTimeout(resolve, 300));
-
-    //         const canvas = await html2canvas(editorRef.current, {
-    //           allowTaint: true,
-    //           useCORS: false,
-    //           scale: 1,
-    //           logging: false,
-    //         });
-
-    //         return canvas.toDataURL("image/png");
-    //       } catch (fallbackError) {
-    //         console.error("❌ Fallback capture also failed:", fallbackError);
-    //         return null;
-    //       }
-    //     }
-    //   },
-    // }));
-    // In ShirtEditor.jsx - Replace the useImperativeHandle section
-
+    /* ================= HTML2CANVAS CAPTURE FOR BACKEND ================= */
     useImperativeHandle(ref, () => ({
       captureImage: async () => {
-        if (!editorRef.current) {
-          console.error("❌ Editor ref not found");
-          return null;
-        }
+        if (!editorRef.current) return null;
 
         try {
-          console.log("📷 Starting iOS-compatible capture...");
-
-          // Load selected font
           const selectedFontObj = fonts.find((f) => f.family === selectedFont);
-          if (selectedFontObj) {
-            injectFontCSS(selectedFontObj.family, selectedFontObj.downloadUrl);
-          }
+          if (selectedFontObj) injectFontCSS(selectedFontObj.family, selectedFontObj.downloadUrl);
 
-          // Wait for fonts
           await document.fonts.ready;
-          await new Promise((resolve) => setTimeout(resolve, 500));
+          await new Promise((r) => setTimeout(r, 500));
 
-          // iOS-optimized html2canvas settings
           const canvas = await html2canvas(editorRef.current, {
             allowTaint: false,
             useCORS: true,
-            scale: window.devicePixelRatio || 2, // Use device pixel ratio
+            scale: window.devicePixelRatio || 2,
             backgroundColor: null,
-            logging: false, // Disable logging for performance
+            logging: false,
             imageTimeout: 10000,
             removeContainer: true,
             foreignObjectRendering: false,
             windowWidth: editorRef.current.scrollWidth,
             windowHeight: editorRef.current.scrollHeight,
-            // iOS-specific: Pre-load all images
             onclone: (clonedDoc) => {
               const images = clonedDoc.querySelectorAll("img");
               images.forEach((img) => {
-                // Force image to be visible
                 img.style.opacity = "1";
                 img.style.display = "block";
               });
-
-              // Force text to render
-              const textElements = clonedDoc.querySelectorAll(`
-                .${styles.presetText}`,
-              );
+              const textElements = clonedDoc.querySelectorAll(`.${styles.presetText}`);
               textElements.forEach((el) => {
                 el.style.fontFamily = selectedFont;
                 el.style.color = selectedColor;
@@ -286,59 +155,32 @@ const ShirtEditor = forwardRef(
             },
           });
 
-          console.log("✅ Canvas created successfully");
-
-          // Convert to blob first (better for iOS)
           return await new Promise((resolve) => {
-            canvas.toBlob(
-              (blob) => {
-                if (!blob) {
-                  console.error("❌ Failed to create blob");
-                  resolve(null);
-                  return;
-                }
-
-                // Convert blob to data URL
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                  console.log("✅ Image conversion complete");
-                  resolve(reader.result);
-                };
-                reader.onerror = () => {
-                  console.error("❌ FileReader error");
-                  resolve(null);
-                };
-                reader.readAsDataURL(blob);
-              },
-              "image/png",
-              0.95,
-            ); // Reduce quality slightly for better iOS performance
+            canvas.toBlob((blob) => {
+              if (!blob) return resolve(null);
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.readAsDataURL(blob);
+            }, "image/png", 0.95);
           });
-        } catch (error) {
-          console.error("❌ Capture failed:", error);
-
-          // iOS fallback: Try simpler capture
+        } catch {
           try {
-            console.log("🔄 Trying iOS fallback...");
-
-            const canvas = await html2canvas(editorRef.current, {
+            const fallbackCanvas = await html2canvas(editorRef.current, {
               allowTaint: false,
               useCORS: false,
-              scale: 1, // Lower quality for compatibility
-              logging: false,
+              scale: 1,
               backgroundColor: null,
               foreignObjectRendering: false,
             });
-
-            return canvas.toDataURL("image/png", 0.8);
-          } catch (fallbackError) {
-            console.error("❌ All capture methods failed:", fallbackError);
-            return null; // Return null instead of throwing
+            return fallbackCanvas.toDataURL("image/png", 0.8);
+          } catch {
+            return null;
           }
         }
       },
     }));
-    /* ================= FETCH & LOAD FONTS ================= */
+
+    /* ================= FETCH FONTS ================= */
     useEffect(() => {
       const fetchFonts = async () => {
         try {
@@ -350,91 +192,61 @@ const ShirtEditor = forwardRef(
           });
           setFonts(res?.data?.data || []);
         } catch (err) {
-          console.error("❌ Font fetch error:", err);
+          console.error("Font fetch error:", err);
         }
       };
       fetchFonts();
     }, []);
 
     useEffect(() => {
-  if (!fonts.length) return;
+      if (!fonts.length) return;
 
-  const loadFonts = async () => {
-    console.log(`📚 Loading ${fonts.length} fonts...`);
+      const loadFonts = async () => {
+        const promises = fonts.map(async (font) => {
+          if (loadedFontsRef.current.has(font.family)) return;
+          try {
+            const f = new FontFace(font.family, `url(${font.downloadUrl})`);
+            document.fonts.add(await f.load());
+            injectFontCSS(font.family, font.downloadUrl);
+            loadedFontsRef.current.add(font.family);
+          } catch {}
+        });
+        await Promise.all(promises);
+        await document.fonts.ready;
+        setFontsLoaded(true);
+      };
 
-    const fontPromises = fonts.map(async (font) => {
-      if (loadedFontsRef.current.has(font.family)) return;
-
-      try {
-        // 1. Create the FontFace correctly
-        const fontFace = new FontFace(font.family, `url(${font.downloadUrl})`);
-        
-        // 2. Load it
-        const loaded = await fontFace.load();
-        
-        // 3. Add to Document
-        document.fonts.add(loaded);
-        
-        // 4. ALSO inject a style tag as a fallback for html2canvas
-        injectFontCSS(font.family, font.downloadUrl);
-        
-        loadedFontsRef.current.add(font.family);
-        console.log(`✅ Font loaded: ${font.family}`);
-      } catch (err) {
-        console.warn(`⚠️ Font load failed: ${font.family}`, err);
-      }
-    });
-
-    await Promise.all(fontPromises);
-    
-    // Final check to ensure browser is ready to render
-    await document.fonts.ready;
-    
-    setFontsLoaded(true);
-    console.log("✅ All fonts loaded and ready");
-  };
-
-  loadFonts();
-}, [fonts]);
+      loadFonts();
+    }, [fonts]);
 
     const startTextEditing = () => {
       if (inputRef.current) {
-        inputRef.current.focus();
         const len = inputRef.current.value.length;
+        inputRef.current.focus();
         inputRef.current.setSelectionRange(len, len);
       }
-
       setIsEditing(true);
 
-      // iOS scroll fix
-      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-      if (isIOS) {
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
         setTimeout(() => {
-          window.scrollTo({
-            top: window.innerHeight * 0.3,
-            behavior: "smooth",
-          });
+          window.scrollTo({ top: window.innerHeight * 0.3, behavior: "smooth" });
         }, 100);
       }
     };
 
     const handleBlur = (e) => {
-      if (e.relatedTarget && editorRef.current?.contains(e.relatedTarget))
-        return;
+      if (e.relatedTarget && editorRef.current?.contains(e.relatedTarget)) return;
       setIsEditing(false);
     };
 
-    /* ================= SELECTION HANDLERS ================= */
     const onFontSelect = (font) => {
       setSelectedFont(font.family);
       inputRef.current?.focus();
     };
-
     const onColorSelect = (c) => {
       setSelectedColor(c);
       inputRef.current?.focus();
     };
-
     const onSizeSelect = (s) => {
       setSelectedSize(s);
       inputRef.current?.focus();
@@ -447,12 +259,7 @@ const ShirtEditor = forwardRef(
     };
 
     return (
-      <section
-        className={styles.img_main_wrap}
-        ref={editorRef}
-        tabIndex="-1"
-        style={{ outline: "none" }}
-      >
+      <section className={styles.img_main_wrap} ref={editorRef} tabIndex="-1" style={{ outline: "none" }}>
         <div className={styles.img_wrap}>
           {!imageLoaded && !imageError && (
             <div className={styles.shimmerWrapper}>
@@ -461,73 +268,16 @@ const ShirtEditor = forwardRef(
           )}
 
           {imageError && (
-            <div
-              style={{
-                padding: "20px",
-                textAlign: "center",
-                color: "#666",
-                minHeight: "400px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                flexDirection: "column",
-                background: "#f5f5f5",
-                borderRadius: "8px",
-              }}
-            >
+            <div style={{ padding: "20px", textAlign: "center", color: "#666", minHeight: "400px", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", background: "#f5f5f5", borderRadius: "8px" }}>
               <p style={{ fontSize: "48px", marginBottom: "10px" }}>⚠️</p>
-              <p style={{ fontWeight: "bold", marginBottom: "5px" }}>
-                Image Failed to Load
-              </p>
-              <p
-                style={{
-                  fontSize: "12px",
-                  color: "#999",
-                  marginBottom: "15px",
-                }}
-              >
-                {product?.canvasImage?.substring(0, 60)}...
-              </p>
-              <button
-                onClick={() => window.location.reload()}
-                style={{
-                  padding: "12px 24px",
-                  background: "#000",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  fontSize: "14px",
-                  fontWeight: "500",
-                }}
-              >
-                Reload Page
-              </button>
+              <p style={{ fontWeight: "bold", marginBottom: "5px" }}>Image Failed to Load</p>
+              <p style={{ fontSize: "12px", color: "#999", marginBottom: "15px" }}>{product?.canvasImage?.substring(0, 60)}...</p>
+              <button onClick={() => window.location.reload()} style={{ padding: "12px 24px", background: "#000", color: "#fff", border: "none", borderRadius: "6px", cursor: "pointer", fontSize: "14px", fontWeight: "500" }}>Reload Page</button>
             </div>
           )}
 
           {imageDataUrl && (
-            <img
-              src={imageDataUrl}
-              alt="product canvas"
-              className={styles.mainImage}
-              onLoad={() => {
-                console.log("✅ Image rendered in DOM");
-                setImageLoaded(true);
-              }}
-              onError={(e) => {
-                console.error("❌ Image render error:", e);
-                setImageError(true);
-              }}
-              style={{
-                opacity: imageLoaded ? 1 : 0,
-                transition: "opacity 0.3s ease",
-                width: "100%",
-                maxWidth: "500px",
-                display: "block",
-                margin: "0 auto",
-              }}
-            />
+            <img src={imageDataUrl} alt="product canvas" className={styles.mainImage} onLoad={() => setImageLoaded(true)} onError={() => setImageError(true)} style={{ opacity: imageLoaded ? 1 : 0, transition: "opacity 0.3s ease", width: "100%", maxWidth: "500px", display: "block", margin: "0 auto" }} />
           )}
 
           {product && imageLoaded && (
@@ -550,127 +300,34 @@ const ShirtEditor = forwardRef(
                   data-enable-grammarly="false"
                 />
               ) : (
-                <div
-                  ref={viewRef}
-                  className={styles.presetText}
-                  onClick={startTextEditing}
-                  style={{ ...dynamicStyles, cursor: "text" }}
-                >
+                <div ref={viewRef} className={styles.presetText} onClick={startTextEditing} style={{ ...dynamicStyles, cursor: "text" }}>
                   {text.trim() || "Your Text Here"}
-
-                  <span
-                    style={{
-                      opacity: showCursor ? 1 : 0,
-                      transition: "opacity 0.1s",
-                      marginLeft: "2px",
-                      fontWeight: "100",
-                      color: selectedColor,
-                    }}
-                  >
-                    |
-                  </span>
+                  <span style={{ opacity: showCursor ? 1 : 0, transition: "opacity 0.1s", marginLeft: "2px", fontWeight: "100", color: selectedColor }}>|</span>
                 </div>
               )}
             </>
           )}
 
           {isEditing && (
-            <div
-              className={styles.floatingToolbar}
-              tabIndex="-1"
-              style={{ outline: "none" }}
-            >
-              <button
-                onClick={() => setActiveTab("size")}
-                className={`${styles.toolButton} ${
-                  activeTab === "size" ? styles.activeTool : ""
-                }`}
-              >
-                <Image src={letterIcon} alt="size" />
-                <span>Font Size</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("color")}
-                className={`${styles.toolButton} ${
-                  activeTab === "color" ? styles.activeTool : ""
-                }`}
-              >
-                <Image src={fontIcon} alt="color" />
-                <span>Colour</span>
-              </button>
-
-              <button
-                onClick={() => setActiveTab("font")}
-                className={`${styles.toolButton} ${
-                  activeTab === "font" ? styles.activeTool : ""
-                }`}
-              >
-                <Image src={familyIcon} alt="font" />
-                <span>Fonts</span>
-              </button>
-
-              <div className={styles.toolButton} onClick={startTextEditing}>
-                <Image src={keyboardIcon} alt="edit" />
-                <span>Edit</span>
-              </div>
-
-              <button
-                className={styles.closeToolbarBtn}
-                onClick={() => setIsEditing(false)}
-              >
-                ×
-              </button>
+            <div className={styles.floatingToolbar} tabIndex="-1" style={{ outline: "none" }}>
+              <button onClick={() => setActiveTab("size")} className={`${styles.toolButton} ${activeTab === "size" ? styles.activeTool : ""}`}><Image src={letterIcon} alt="size" /><span>Font Size</span></button>
+              <button onClick={() => setActiveTab("color")} className={`${styles.toolButton} ${activeTab === "color" ? styles.activeTool : ""}`}><Image src={fontIcon} alt="color" /><span>Colour</span></button>
+              <button onClick={() => setActiveTab("font")} className={`${styles.toolButton} ${activeTab === "font" ? styles.activeTool : ""}`}><Image src={familyIcon} alt="font" /><span>Fonts</span></button>
+              <div className={styles.toolButton} onClick={startTextEditing}><Image src={keyboardIcon} alt="edit" /><span>Edit</span></div>
+              <button className={styles.closeToolbarBtn} onClick={() => setIsEditing(false)}>×</button>
 
               <div className={styles.optionsPanel}>
-                {activeTab === "font" && (
-                  <div className={styles.fontOptions}>
-                    {fonts.map((font) => (
-                      <button
-                        key={font.family}
-                        onClick={() => onFontSelect(font)}
-                        className={`${styles.fontOption} ${
-                          selectedFont === font.family ? styles.active : ""
-                        }`}
-                        style={{ fontFamily: font.family }}
-                      >
-                        {font.family}
-                        <Image src={lineIcon} alt="line" />
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {activeTab === "font" && <div className={styles.fontOptions}>{fonts.map((font) => (
+                  <button key={font.family} onClick={() => onFontSelect(font)} className={`${styles.fontOption} ${selectedFont === font.family ? styles.active : ""}`} style={{ fontFamily: font.family }}>{font.family}<Image src={lineIcon} alt="line" /></button>
+                ))}</div>}
 
-                {activeTab === "color" && (
-                  <div className={styles.colorOptions}>
-                    {COLORS.map((c) => (
-                      <button
-                        key={c}
-                        onClick={() => onColorSelect(c)}
-                        className={`${styles.colorSwatch} ${
-                          selectedColor === c ? styles.activeColor : ""
-                        }`}
-                        style={{ backgroundColor: c }}
-                      />
-                    ))}
-                  </div>
-                )}
+                {activeTab === "color" && <div className={styles.colorOptions}>{COLORS.map((c) => (
+                  <button key={c} onClick={() => onColorSelect(c)} className={`${styles.colorSwatch} ${selectedColor === c ? styles.activeColor : ""}`} style={{ backgroundColor: c }} />
+                ))}</div>}
 
-                {activeTab === "size" && (
-                  <div className={styles.sizeOptions}>
-                    {SIZES.map((s) => (
-                      <button
-                        key={s}
-                        onClick={() => onSizeSelect(s)}
-                        className={`${styles.sizeBtn} ${
-                          selectedSize === s ? styles.activeSize : ""
-                        }`}
-                      >
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {activeTab === "size" && <div className={styles.sizeOptions}>{SIZES.map((s) => (
+                  <button key={s} onClick={() => onSizeSelect(s)} className={`${styles.sizeBtn} ${selectedSize === s ? styles.activeSize : ""}`}>{s}</button>
+                ))}</div>}
               </div>
             </div>
           )}
