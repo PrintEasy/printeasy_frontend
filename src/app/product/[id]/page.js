@@ -52,9 +52,8 @@ const ProductDetails = () => {
   const [resumePayment, setResumePayment] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
   const [editorReady, setEditorReady] = useState(false);
+  const [selectedSizeYear, setSelectedSizeYear] = useState("");
 
-
-  
   useEffect(() => {
     if (product) {
       setText(product.presetText || "Empty Text");
@@ -72,17 +71,22 @@ const ProductDetails = () => {
     );
 
     setSizeInfo(match || null);
+
+    if (match) {
+      setSelectedSizeYear(match.value); // still keep for UI
+    }
+
     setShowSizeSheet(false);
 
-    // 🔥 Resume correct action
+    // ✅ Use the value directly instead of waiting for state
     if (pendingAction === "PAY_NOW") {
       setPendingAction(null);
-      proceedWithPayment();
+      proceedWithPayment(match?.value); // pass the value
     }
 
     if (pendingAction === "ADD_TO_CART") {
       setPendingAction(null);
-      processAddToCart(size);
+      processAddToCart(size); // for ADD_TO_CART you can pass sizeInfo if needed
     }
   };
 
@@ -216,6 +220,8 @@ const ProductDetails = () => {
     }
   };
 
+  console.log(product?.configuration[0].options, "sososppyyttttt");
+
   useEffect(() => {
     setEditorReady(false);
   }, [id]);
@@ -325,7 +331,8 @@ const ProductDetails = () => {
     await proceedWithPayment();
   };
 
-  const proceedWithPayment = async () => {
+  const proceedWithPayment = async (sizeValue) => {
+    const sizeToSend = sizeValue || selectedSizeYear;
     try {
       const finalItems = [
         {
@@ -337,6 +344,7 @@ const ProductDetails = () => {
           isCustomizable: !!product.isCustomizable,
           productImageUrl: product?.fullProductUrl,
           discount: product.discount || 0,
+          sizeInfo: sizeToSend,
           tax: product.tax || 0,
           hsn: product.hsn || null,
           printingImgText: {
@@ -345,6 +353,7 @@ const ProductDetails = () => {
             fontFamily: selectedFont,
             fontSize: selectedSize,
             illustrationImage: product?.illustrationImage,
+            shirtImage: product?.canvasImage,
           },
         },
       ];
@@ -597,9 +606,7 @@ const ProductDetails = () => {
                   {product?.configuration?.[0]?.options.map((s) => (
                     <button
                       key={s.value}
-                      onClick={() => {
-                        handleSizeSelect(s.value);
-                      }}
+                      onClick={() => handleSizeSelect(s.value)}
                       className={`${styles.sizeBtn} ${
                         selectedSize === s.value ? styles.activeSize : ""
                       }`}
