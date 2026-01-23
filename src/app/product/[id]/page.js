@@ -53,15 +53,9 @@ const ProductDetails = () => {
   const [pendingAction, setPendingAction] = useState(null);
   const [editorReady, setEditorReady] = useState(false);
   const [selectedSizeYear, setSelectedSizeYear] = useState("");
-  const cashfreeRef = useRef(null);
+  
 
-  useEffect(() => {
-  load({ mode: "production" }).then((cf) => {
-    cashfreeRef.current = cf;
-  });
-}, []);
-
-  useEffect(() => {
+useEffect(() => {
     if (product) {
       setText(product.presetText || "Empty Text");
       setSelectedColor(product.fontColor || "#000");
