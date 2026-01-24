@@ -424,10 +424,12 @@ useEffect(() => {
         id="cashfree-dropin"
         style={{
           width: "100%",
-          height: showProductUI ? "0" : "100vh",
+          minHeight: showProductUI ? "0" : "600px",
+          height: showProductUI ? "0" : "auto",
           display: showProductUI ? "none" : "flex",
           justifyContent: "center",
           overflow: "hidden",
+          order: -1
         }}
       />
 
