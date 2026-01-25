@@ -248,6 +248,29 @@ const Cart = () => {
     }
   };
 
+useEffect(() => {
+  if (!showCartUI) {
+    document.body.style.overflow = "hidden";
+
+    const forceHeight = setInterval(() => {
+      const iframe = document.querySelector('iframe[src*="cashfree"]');
+      if (!iframe) return;
+
+      iframe.style.setProperty("height", "100vh", "important");
+      iframe.style.setProperty("max-height", "100vh", "important");
+      iframe.style.setProperty("width", "100%", "important");
+      iframe.style.setProperty("position", "fixed", "important");
+      iframe.style.setProperty("top", "0", "important");
+      iframe.style.setProperty("left", "0", "important");
+      iframe.style.setProperty("border", "none", "important");
+    }, 150);
+
+    return () => {
+      clearInterval(forceHeight);
+      document.body.style.overflow = "";
+    };
+  }
+}, [showCartUI]);
 
 
   return (
