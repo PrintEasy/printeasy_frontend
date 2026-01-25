@@ -248,28 +248,47 @@ const Cart = () => {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
   if (!showCartUI) {
-    const interval = setInterval(() => {
+    const forceFullHeight = () => {
       const modalBody = document.querySelector(
         '[class*="modal-body"][class*="svelte"]'
       );
+      const iframe = document.querySelector('iframe[src*="cashfree"]');
 
       if (modalBody) {
-        modalBody.style.height = "100vh";
-        modalBody.style.maxHeight = "100vh";
-        modalBody.style.minHeight = "100vh";
-        modalBody.style.overflowY = "auto";
-        modalBody.style.display = "flex";
-        modalBody.style.flexDirection = "column";
-
-        clearInterval(interval);
+        modalBody.style.setProperty("height", "100vh", "important");
+        modalBody.style.setProperty("max-height", "100vh", "important");
+        modalBody.style.setProperty("min-height", "100vh", "important");
+        modalBody.style.setProperty("overflow-y", "auto", "important");
+        modalBody.style.setProperty("display", "flex", "important");
+        modalBody.style.setProperty("flex-direction", "column", "important");
       }
-    }, 200);
 
-    return () => clearInterval(interval);
+      if (iframe) {
+        iframe.style.setProperty("height", "100vh", "important");
+        iframe.style.setProperty("max-height", "100vh", "important");
+      }
+    };
+
+    // Run once immediately
+    forceFullHeight();
+
+    // Observe DOM changes (Cashfree keeps mutating it)
+    const observer = new MutationObserver(() => {
+      forceFullHeight();
+    });
+
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
+
+    return () => observer.disconnect();
   }
 }, [showCartUI]);
+
 
 // const iframe = document.querySelector('iframe[src*="cashfree"]');
 // if (iframe) {
