@@ -11,17 +11,19 @@ body {
   height: -webkit-fill-available;
 }
 
-.cashfree-modal-container {
-  width: 100% !important;
-  height: "auto" !important;
+
+iframe[src*="cashfree"] {
+  height: 100vh !important;
 }
 
-.modal-body.svelte-1enjjul {
+/* .modal-body.svelte-1enjjul {
   height: 100vh !important;
   overflow-y: auto !important;
   display: flex !important;
   flex-direction: column !important;
-}
+} */
+
+
 
 @media (max-width: 768px) {
   .navbar-wrapper {

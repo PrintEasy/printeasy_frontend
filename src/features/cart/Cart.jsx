@@ -248,18 +248,31 @@ const Cart = () => {
     }
   };
 
+  useEffect(() => {
+  const interval = setInterval(() => {
+    const iframe = document.querySelector('iframe[src*="cashfree"]');
+    if (iframe) {
+      iframe.style.height = "100vh";
+      iframe.style.maxHeight = "100vh";
+      clearInterval(interval);
+    }
+  }, 300);
+
+  return () => clearInterval(interval);
+}, []);
+
+
   return (
     <>
       <div
         id="cashfree-dropin"
         style={{
          width: "100%",
-          minHeight: showCartUI ? "0" : "500px",
+          // minHeight: showCartUI ? "0" : "900px",
           height: showCartUI ? "0" : "auto",
           display: showCartUI ? "none" : "flex",
           justifyContent: "center",
-          overflowY: "scroll",
-          overflowX:"hidden",
+          overflow:"hidden",
           order: -1
         }}
       />
