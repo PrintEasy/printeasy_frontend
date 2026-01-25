@@ -262,13 +262,20 @@ const Cart = () => {
           order: -1
         }}
       /> */}
-      {
-        !showCartUI && 
-        <div className={styles.cashfree_modal}>
-        <div id="cashfree-dropin" className={!showCartUI ? "active" : ""} />
-      </div>
-      }
-      
+<div
+  id="cashfree-dropin"
+  className={!showCartUI ? "active" : ""}
+  style={{
+    position: "fixed",
+    inset: 0,
+    width: showCartUI ? "0" : "100%",
+    height: showCartUI ? "0" : "100dvh",
+    overflow: "hidden",
+    backgroundColor: "transparent",
+  }}
+/>
+
+
 
       {showCartUI && (
         <div className={styles.cartPage}>
