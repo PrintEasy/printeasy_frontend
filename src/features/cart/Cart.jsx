@@ -249,6 +249,9 @@ const Cart = () => {
     }
   };
 
+
+
+
   return (
     <>
       {/* <div
@@ -262,19 +265,19 @@ const Cart = () => {
         }}
       /> */}
 
-      <div
-  id="cashfree-dropin"
-  style={{
-    position: "fixed",
-    inset: 0,
-    width: "100vw",
-    height: "100dvh",
-    backgroundColor: "#ffffff",
-    zIndex: 9999,
-    overflowY: "auto",
-    display: showCartUI ? "none" : "block",
-  }}
-/>
+  
+  <div
+    id="cashfree-dropin"
+    style={{
+      height: showCartUI ? "0" : "auto",
+          display: showCartUI ? "none" : "flex",
+       // mobile-like
+      background: "#fff",
+      overflow: "hidden",
+    }}
+  />
+
+
 
       {showCartUI && (
         <div className={styles.cartPage}>
