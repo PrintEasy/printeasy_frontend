@@ -389,7 +389,7 @@ const ShirtEditor = forwardRef(
                       opacity: showCursor ? 1 : 0,
                       transition: "opacity 0.1s",
                       marginLeft: "2px",
-                      fontWeight: "100",
+                      fontWeight: "500",
                       color: selectedColor,
                     }}
                   >
