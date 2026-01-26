@@ -143,6 +143,7 @@ const Cart = () => {
     }
 
     try {
+      window.scrollTo(0, 0);
       const finalItems = orderPayloadItems.map((item) => {
         if (!item.isCustomizable) return item;
 
@@ -250,7 +251,18 @@ const Cart = () => {
 
   return (
     <>
-      <div
+  <div
+  id="cashfree-dropin"
+  style={{
+    display: showCartUI ? "none" : "flex",
+    width: "100%",
+    justifyContent:"center",   // This centers the block horizontally
+    minHeight: "100vh", // Ensures the page is long enough
+    overflow: "hidden" // Allows the main window to handle scrolling
+  }}
+/>
+
+{/* <div
         id="cashfree-dropin"
         style={{
          width: "100%",
@@ -261,7 +273,7 @@ const Cart = () => {
           overflow:"hidden",
           order: -1
         }}
-      />
+      /> */}
 
 
 
