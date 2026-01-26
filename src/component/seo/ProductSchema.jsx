@@ -15,7 +15,7 @@ export default function ProductSchema({ product }) {
           "@context": "https://schema.org/",
           "@type": "Product",
 
-          /* 🔴 REQUIRED BY META */
+ 
           "id": product.id,
 
           "name": product.name,

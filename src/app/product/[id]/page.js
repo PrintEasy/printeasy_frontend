@@ -23,6 +23,7 @@ import DynamicModal from "@/component/Modal/Modal";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
 import { createSlug } from "@/app/helper";
 import ProductSchema from "@/component/seo/ProductSchema";
+import ProductPixel from "@/component/seo/ProductPixel";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -445,6 +446,7 @@ const ProductDetails = () => {
       />
 
       <ProductSchema product={product} />
+      <ProductPixel product={product} /> 
 
       {showProductUI && (
         <>
