@@ -1,25 +1,25 @@
 
  
-#cashfree-dropin {
-  position: fixed;
-  inset: 0;
-  z-index: 999999;
-  background: rgba(0, 0, 0, 0.6);
+// #cashfree-dropin {
+//   position: fixed;
+//   inset: 0;
+//   z-index: 999999;
+//   background: rgba(0, 0, 0, 0.6);
 
-  display: none;
-  overflow: hidden;
-}
+//   display: none;
+//   overflow: hidden;
+// }
 
-#cashfree-dropin.active {
-  display: flex;
-  justify-content: center !important;
-  align-items: center !important;
-}
+// #cashfree-dropin.active {
+//   display: flex;
+//   justify-content: center !important;
+//   align-items: center !important;
+// }
 
-#cashfree-dropin iframe {
-  width: 100%;
-  max-width: 420px;
-}
+// #cashfree-dropin iframe {
+//   width: 100%;
+//   max-width: 420px;
+// }
 
 
 
