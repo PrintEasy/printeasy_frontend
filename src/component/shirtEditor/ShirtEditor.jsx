@@ -11,7 +11,7 @@ import styles from "./shirtEditor.module.scss";
 import Image from "next/image";
 import { COLORS, SIZES } from "@/constants";
 import api from "@/axiosInstance/axiosInstance";
-
+import loader from "../../assessts/loader/click.gif";
 import fontIcon from "../../assessts/font.svg";
 import letterIcon from "../../assessts/letter1.svg";
 import familyIcon from "../../assessts/family.svg";
@@ -43,6 +43,8 @@ const ShirtEditor = forwardRef(
     const [showCursor, setShowCursor] = useState(true);
     const [imageError, setImageError] = useState(false);
     const [imageDataUrl, setImageDataUrl] = useState(null);
+    const [hasUserInteracted, setHasUserInteracted] = useState(false);
+
     const loadedFontsRef = useRef(new Set());
     const canvasRef = useRef(null);
     const inputRef = useRef(null);
@@ -145,7 +147,7 @@ const ShirtEditor = forwardRef(
           // ---- TEXT BOX SETTINGS ----
           const maxWidth = 267;
           const maxHeight = 67;
-          const lineHeight = 30
+          const lineHeight = 30;
           const fontSize = 40;
 
           ctx.fillStyle = selectedColor;
@@ -237,6 +239,10 @@ const ShirtEditor = forwardRef(
     }, [fonts]);
 
     const startTextEditing = () => {
+      if (!hasUserInteracted) {
+        setHasUserInteracted(true);
+      }
+
       if (inputRef.current) {
         const len = inputRef.current.value.length;
         inputRef.current.focus();
@@ -378,24 +384,26 @@ const ShirtEditor = forwardRef(
                 />
               ) : (
                 <div
-                  ref={viewRef}
-                  className={styles.presetText}
-                  onClick={startTextEditing}
-                  style={{ ...dynamicStyles, cursor: "text" }}
-                >
-                  {text.trim() || "Your Text Here"}
-                  <span
-                    style={{
-                      opacity: showCursor ? 1 : 0,
-                      transition: "opacity 0.1s",
-                      marginLeft: "2px",
-                      fontWeight: "500",
-                      color: selectedColor,
-                    }}
-                  >
-                    |
-                  </span>
-                </div>
+  ref={viewRef}
+  className={styles.presetText}
+  onClick={startTextEditing}
+  style={{ ...dynamicStyles, cursor: "text" }}
+>
+ 
+    {text.trim() || "Your Text Here"}
+  
+
+  {!hasUserInteracted && (
+    <Image
+      src={loader.src}
+      alt="tap to type"
+      width={120}
+      height={120}
+      className={styles.overlayLoader}
+    />
+  )}
+</div>
+
               )}
             </>
           )}

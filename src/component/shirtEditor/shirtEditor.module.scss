@@ -58,12 +58,8 @@
   transform: translate(-50%, -50%);
 
   width: 175px;
-  /* Fixed height: 2 lines based on current font size */
   height: calc(var(--current-font-size, 28px) * 1.2 * 2);
-  min-height: calc(var(--current-font-size, 28px) * 1.2 * 2);
-  max-height: calc(var(--current-font-size, 28px) * 1.2 * 2);
 
-  box-sizing: border-box;
   text-align: center;
   line-height: 1.2;
 
@@ -74,15 +70,40 @@
   overflow: hidden;
   cursor: pointer;
   z-index: 10;
-  margin: 0;
-  padding: 0;
-
-  /* Hide scrollbars */
-  scrollbar-width: none;
-  &::-webkit-scrollbar {
-    display: none;
-  }
 }
+
+/* Keeps natural text flow */
+.textContent {
+  display: inline;
+}
+
+/* 👇 Overlay image */
+.overlayLoader {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+
+  /* anchor near end of text */
+  right: -40px;        // tweak as needed
+  top: 50%;
+  transform: translateY(-50%);
+
+  pointer-events: none; // doesn't block clicks
+  z-index: 20;
+}
+
+
+/* Text wrapper */
+.textContent {
+  display: inline;
+}
+
+/* Loader image */
+.inlineLoader {
+  flex-shrink: 0;              // 🔥 prevents shrinking
+  object-fit: contain;
+}
+
 
 .editInput {
   background: transparent;
@@ -90,6 +111,7 @@
   border: none;
   resize: none;
   display: block;
+    font: inherit; 
 }
 
 .floatingToolbar {
