@@ -7,7 +7,28 @@
 
 html,
 body {
- width: 100%;
+  width: 100%;
+}
+
+/* Cashfree embedded - single scroll: only iframe content scrolls, no double scroll */
+#cashfree-dropin,
+#cashfree-dropin > div,
+.cashfreeDropin,
+.cashfreeDropin > div {
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+}
+
+#cashfree-dropin iframe,
+.cashfreeDropin iframe,
+[id*="cashfree"] iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100vh !important;
+  min-height: 100dvh !important;
+  border: none !important;
+  display: block !important;
 }
 
 

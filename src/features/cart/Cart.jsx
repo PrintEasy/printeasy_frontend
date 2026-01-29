@@ -441,6 +441,21 @@ const Cart = () => {
     getOfferData();
   }, []);
 
+  // Single scroll: lock body when payment overlay is open so only Cashfree content scrolls
+  useEffect(() => {
+    if (isPaymentMode) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [isPaymentMode]);
+
   const handleQuantityChange = async (id, newQuantity) => {
     if (newQuantity < 1) return;
     await db.cart.update(id, { quantity: newQuantity });
@@ -660,55 +675,20 @@ const Cart = () => {
 
   return (
     <>
-      {/* Full-screen payment container */}
+      {/* Full-screen payment container - single scroll (no double scroll) */}
       <div
-        style={{
-          display: isPaymentMode ? "block" : "none",
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          backgroundColor: "#fff",
-          zIndex: 9999,
-          overflow: "hidden",
-        }}
+        className={styles.cashfreeOverlay}
+        style={{ display: isPaymentMode ? "block" : "none" }}
       >
-        {/* Add a close/back button for payment mode */}
-        <div
-          style={{
-            position: "absolute",
-            top: "20px",
-            left: "20px",
-            zIndex: 10000,
-            background: "#fff",
-            borderRadius: "50%",
-            width: "40px",
-            height: "40px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
-            cursor: "pointer",
-          }}
+        <button
+          type="button"
+          className={styles.cashfreeBackBtn}
           onClick={() => setIsPaymentMode(false)}
+          aria-label="Back to cart"
         >
           <ChevronLeft size={24} />
-        </div>
-        
-        <div
-          id="cashfree-dropin"
-          style={{
-            width: "100%",
-            height: "100%",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "flex-start",
-            paddingTop: "20px",
-            overflowY: "auto",
-            overflowX: "hidden",
-          }}
-        />
+        </button>
+        <div id="cashfree-dropin" className={styles.cashfreeDropin} />
       </div>
 
       {/* Cart UI - Only shown when not in payment mode */}
