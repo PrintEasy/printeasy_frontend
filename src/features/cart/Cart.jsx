@@ -428,7 +428,7 @@ const Cart = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
   const [cartLoader, setCartLoader] = useState(false);
-  const [showCartUI, setShowCartUI] = useState(true);
+  const [isPaymentMode, setIsPaymentMode] = useState(false);
 
   const handleContinue = () => {
     setIsLoginModalVisible(false);
@@ -440,19 +440,6 @@ const Cart = () => {
     getAddressList();
     getOfferData();
   }, []);
-
-  // Prevent body scroll when payment UI is shown
-  useEffect(() => {
-    if (!showCartUI) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [showCartUI]);
 
   const handleQuantityChange = async (id, newQuantity) => {
     if (newQuantity < 1) return;
@@ -555,6 +542,7 @@ const Cart = () => {
     }
 
     try {
+      setCartLoader(true);
       window.scrollTo(0, 0);
       const finalItems = orderPayloadItems.map((item) => {
         if (!item.isCustomizable) return item;
@@ -601,43 +589,49 @@ const Cart = () => {
         paymentSessionId,
       });
 
-      // Hide cart UI and show embedded checkout
-      setShowCartUI(false);
+      // Switch to payment mode
+      setIsPaymentMode(true);
       setCartLoader(false);
 
-      // Small delay to ensure DOM is ready
-      await new Promise(resolve => setTimeout(resolve, 100));
+      // Clear any existing content in the container
+      const container = document.getElementById("cashfree-dropin");
+      if (container) {
+        container.innerHTML = "";
+      }
 
-      const cashfree = await load({ mode: "production" });
+      // Add a small delay to ensure DOM is ready
+      setTimeout(async () => {
+        const cashfree = await load({ mode: "production" });
 
-      // EMBEDDED checkout with redirectTarget to specific div
-      const checkoutOptions = {
-        paymentSessionId: paymentSessionId,
-        redirectTarget: document.getElementById("cashfree-dropin"),
-      };
+        // EMBEDDED checkout with redirectTarget to specific div
+        const checkoutOptions = {
+          paymentSessionId: paymentSessionId,
+          redirectTarget: document.getElementById("cashfree-dropin"),
+        };
 
-      cashfree.checkout(checkoutOptions).then((result) => {
-        console.log("Cashfree SDK result:", result);
+        cashfree.checkout(checkoutOptions).then((result) => {
+          console.log("Cashfree SDK result:", result);
 
-        if (result.error) {
-          console.error("SDK Error:", result.error);
-          toast.error(result.error.message || "Payment failed");
-          setShowCartUI(true);
-          return;
-        }
-        if (result.paymentDetails) {
-          console.log("Payment completed, details:", result.paymentDetails);
-          window.location.href = `/order-redirect?order_id=${cashfreeOrderId}&backend_order_id=${backendOrderId}`;
-        }
-        if (result.redirect) {
-          console.log("SDK is redirecting...");
-        }
-      });
+          if (result.error) {
+            console.error("SDK Error:", result.error);
+            toast.error(result.error.message || "Payment failed");
+            setIsPaymentMode(false);
+            return;
+          }
+          if (result.paymentDetails) {
+            console.log("Payment completed, details:", result.paymentDetails);
+            window.location.href = `/order-redirect?order_id=${cashfreeOrderId}&backend_order_id=${backendOrderId}`;
+          }
+          if (result.redirect) {
+            console.log("SDK is redirecting...");
+          }
+        });
+      }, 100);
     } catch (error) {
       console.error("Payment error:", error);
       toast.error("Failed to initiate payment");
       setCartLoader(false);
-      setShowCartUI(true);
+      setIsPaymentMode(false);
     }
   };
 
@@ -666,37 +660,59 @@ const Cart = () => {
 
   return (
     <>
-      {/* Cashfree Embedded Checkout - Full Screen Overlay */}
-      {!showCartUI && (
+      {/* Full-screen payment container */}
+      <div
+        style={{
+          display: isPaymentMode ? "block" : "none",
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          backgroundColor: "#fff",
+          zIndex: 9999,
+          overflow: "hidden",
+        }}
+      >
+        {/* Add a close/back button for payment mode */}
         <div
           style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            width: "100vw",
-            height: "100vh",
-            backgroundColor: "#ffffff",
-            zIndex: 9999,
-            overflow: "auto",
-            WebkitOverflowScrolling: "touch",
+            position: "absolute",
+            top: "20px",
+            left: "20px",
+            zIndex: 10000,
+            background: "#fff",
+            borderRadius: "50%",
+            width: "40px",
+            height: "40px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 2px 10px rgba(0,0,0,0.1)",
+            cursor: "pointer",
           }}
+          onClick={() => setIsPaymentMode(false)}
         >
-          <div
-            id="cashfree-dropin"
-            style={{
-              width: "100%",
-              minHeight: "100%",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          />
+          <ChevronLeft size={24} />
         </div>
-      )}
+        
+        <div
+          id="cashfree-dropin"
+          style={{
+            width: "100%",
+            height: "100%",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start",
+            paddingTop: "20px",
+            overflowY: "auto",
+            overflowX: "hidden",
+          }}
+        />
+      </div>
 
-      {/* Cart UI */}
-      {showCartUI && (
+      {/* Cart UI - Only shown when not in payment mode */}
+      {!isPaymentMode && (
         <div className={styles.cartPage}>
           <ToastContainer position="top-right" autoClose={2000} />
           {cartItems?.length > 0 ? (
