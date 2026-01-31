@@ -12,7 +12,6 @@ import "react-toastify/dist/ReactToastify.css";
 import api from "@/axiosInstance/axiosInstance";
 import { db } from "@/lib/db";
 import Cookies from "js-cookie";
-import { load } from "@cashfreepayments/cashfree-js";
 import DynamicModal from "@/component/Modal/Modal";
 import LoginForm from "../signup/LogIn/LoginForm";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
@@ -31,7 +30,7 @@ const Cart = () => {
   const [cartLoader, setCartLoader] = useState(false);
   const [showCartUI, setShowCartUI] = useState(true);
 
-  console.log(cartItems,"shssjsuuyyy")
+  console.log(cartItems, "shssjsuuyyy");
 
   const handleContinue = () => {
     setIsLoginModalVisible(false);
@@ -139,6 +138,11 @@ const Cart = () => {
 
   // ----------------- Cashfree EMBEDDED Integration -----------------
   const handlePayNow = async () => {
+    if (!window.Cashfree) {
+      toast.error("Payment SDK not loaded");
+      return;
+    }
+
     if (cartItems.length === 0) {
       toast.warning("Your cart is empty!");
       return;
@@ -195,7 +199,9 @@ const Cart = () => {
       setShowCartUI(false);
       setCartLoader(false);
 
-      const cashfree = await load({ mode: "production" });
+      const cashfree = new window.Cashfree({
+        mode: "production", // or "sandbox"
+      });
 
       // EMBEDDED checkout with redirectTarget to specific div
       const checkoutOptions = {
@@ -253,9 +259,7 @@ const Cart = () => {
 
   return (
     <>
-     
-
-      <div
+       <div
         id="cashfree-dropin"
         style={{
          width: "100%",
@@ -264,7 +268,18 @@ const Cart = () => {
           justifyContent: "center",
           overflow:"hidden",
         }}
-      />
+      /> 
+
+      {/* <div
+        id="cashfree-dropin"
+        style={{
+          position: "fixed",
+          inset: 0,
+          background: "#fff",
+          zIndex: 9999,
+          display: showCartUI ? "none" : "block",
+        }}
+      /> */}
 
       {showCartUI && (
         <div className={styles.cartPage}>

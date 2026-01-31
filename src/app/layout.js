@@ -7,8 +7,16 @@ import WhatsAppFloat from "./WhatsAppFloat/WhatsAppFloat";
 import "./globals.css";
 
 // 1. Optimize Fonts using next/font
-const poppins = Poppins({ subsets: ["latin"], weight: ["400", "600"], variable: "--font-poppins" });
-const montserrat = Montserrat({ subsets: ["latin"], weight: ["500", "700"], variable: "--font-montserrat" });
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-poppins",
+});
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["500", "700"],
+  variable: "--font-montserrat",
+});
 
 export const metadata = {
   title: "OnRise Store",
@@ -34,6 +42,10 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${poppins.variable} ${montserrat.variable}`}>
+      <Script
+        src="https://sdk.cashfree.com/js/v3/cashfree.js"
+        strategy="afterInteractive"
+      />
       <body>
         {/* 2. Meta Pixel using next/script for better loading performance */}
         <Script id="fb-pixel" strategy="afterInteractive">
