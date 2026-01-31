@@ -42,12 +42,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${poppins.variable} ${montserrat.variable}`}>
-      <Script
-        src="https://sdk.cashfree.com/js/v3/cashfree.js"
-        strategy="afterInteractive"
-      />
       <body>
-        {/* 2. Meta Pixel using next/script for better loading performance */}
+       
         <Script id="fb-pixel" strategy="afterInteractive">
           {`
             !function(f,b,e,v,n,t,s)
