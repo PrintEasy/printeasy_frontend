@@ -8,18 +8,27 @@ export default function PaymentClient() {
   const sessionId = params.get("sessionId");
 
   useEffect(() => {
-    if (!sessionId || !window.Cashfree) return;
+    if (!sessionId) return;
 
-    document.body.style.overflow = "hidden";
+    const initPayment = () => {
+      const target = document.getElementById("cashfree-dropin");
+      if (!target || !window.Cashfree) return;
 
-    const cashfree = new window.Cashfree({ mode: "production" });
+      document.body.style.overflow = "hidden";
 
-    cashfree.checkout({
-      paymentSessionId: sessionId,
-      redirectTarget: "#cashfree-dropin",
-    });
+      const cashfree = new window.Cashfree({ mode: "production" });
+
+      cashfree.checkout({
+        paymentSessionId: sessionId,
+        redirectTarget: target, // ✅ MUST be DOM element
+      });
+    };
+
+    // ensure DOM + script both are ready
+    const timer = setTimeout(initPayment, 0);
 
     return () => {
+      clearTimeout(timer);
       document.body.style.overflow = "";
     };
   }, [sessionId]);
@@ -32,7 +41,8 @@ export default function PaymentClient() {
         inset: 0,
         width: "100vw",
         height: "100dvh",
-        background: "#fff",
+        backgroundColor: "#fff",
+        zIndex: 9999,
         overflow: "hidden",
       }}
     />
