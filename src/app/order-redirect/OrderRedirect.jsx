@@ -1,3 +1,219 @@
+// "use client";
+
+// import React, { useEffect, useState, useRef } from "react";
+// import { useRouter, useSearchParams } from "next/navigation";
+// import { toast, ToastContainer } from "react-toastify";
+// import "react-toastify/dist/ReactToastify.css";
+// import api from "@/axiosInstance/axiosInstance";
+// import { db } from "@/lib/db";
+// import styles from "./orderRedirect.module.scss";
+
+// export default function OrderRedirect() {
+//   const router = useRouter();
+//   const searchParams = useSearchParams();
+
+//   const [loading, setLoading] = useState(true);
+//   const [status, setStatus] = useState("processing");
+
+//   const pollingRef = useRef(null);
+//   const attemptsRef = useRef(0);
+//   const maxAttempts = 15;
+
+//   useEffect(() => {
+//     const backendOrderId = localStorage.getItem("pendingOrderId");
+
+//     if (!backendOrderId) {
+//       toast.error("Order information not found");
+//       setStatus("error");
+//       setLoading(false);
+//       return;
+//     }
+
+//     pollOrderStatus(backendOrderId);
+
+//     return () => {
+//       if (pollingRef.current) clearInterval(pollingRef.current);
+//     };
+//   }, []);
+
+//   const pollOrderStatus = (orderId) => {
+//     attemptsRef.current = 0;
+//     checkOrderStatus(orderId);
+
+//     pollingRef.current = setInterval(() => {
+//       attemptsRef.current += 1;
+
+//       if (attemptsRef.current >= maxAttempts) {
+//         clearInterval(pollingRef.current);
+//         setStatus("timeout");
+//         setLoading(false);
+//         return;
+//       }
+
+//       checkOrderStatus(orderId);
+//     }, 1000);
+//   };
+
+//   const checkOrderStatus = async (orderId) => {
+//     try {
+//       const response = await api.get(
+//         `/v1/payment/order-status?orderId=${orderId}`,
+//         {
+//           headers: {
+//             "x-api-key":
+//               "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
+//           },
+//         }
+//       );
+
+//       if (!response.data?.success) return;
+
+//       const orderStatus = response.data.data.status;
+//       console.log(orderStatus,"sssssssssss")
+//       if (orderStatus === "confirmed") {
+//         clearInterval(pollingRef.current);
+//         setStatus("success");
+//         // toast.success("Payment successful!");
+//         localStorage.setItem("orderId",response?.data?.data?.orderId)
+//         localStorage.removeItem("pendingOrderId");
+//         localStorage.removeItem("pendingCashfreeOrderId");
+//         localStorage.removeItem("pendingOrderAmount");
+
+//         await db.cart.clear();
+//         setLoading(false);
+//       }
+
+//       if (orderStatus === "failed" || orderStatus === "cancelled") {
+//         clearInterval(pollingRef.current);
+//         setStatus("failed");
+//         toast.error("Payment failed or cancelled");
+
+//         localStorage.removeItem("pendingOrderId");
+//         localStorage.removeItem("pendingCashfreeOrderId");
+//         localStorage.removeItem("pendingOrderAmount");
+
+//         setLoading(false);
+//       }
+//     } catch (error) {
+//       console.error("Order status check failed", error);
+//     }
+//   };
+
+//   return (
+//     <div className={styles.container}>
+//       <ToastContainer />
+//       <div className={styles.card}>
+
+//         {/* PROCESSING */}
+//         {loading && status === "processing" && (
+//           <div className={styles.content}>
+//             <div className={styles.spinner} />
+//             <h2>Processing Payment</h2>
+//             <p>Please wait while we confirm your payment</p>
+//           </div>
+//         )}
+
+//         {/* SUCCESS */}
+//         {status === "success" && (
+//           <div className={styles.successContent}>
+//             <div className={styles.successIcon}>✓</div>
+//             <h2>Payment Successful!</h2>
+
+//             <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginTop: "20px" }}>
+//               <button
+//                 onClick={() => router.push("/orders")}
+//                 style={primaryBtn}
+//               >
+//                 View Orders
+//               </button>
+
+//               <button
+//                 onClick={() => router.push("/")}
+//                 style={secondaryBtn}
+//               >
+//                 Continue Shopping
+//               </button>
+//             </div>
+//           </div>
+//         )}
+
+//         {/* FAILED */}
+//         {status === "failed" && (
+//           <div className={styles.failedContent}>
+//             <div className={styles.failedIcon}>✕</div>
+//             <h2>Payment Failed</h2>
+
+//             <div style={{ marginTop: "20px" }}>
+//               <button
+//                 onClick={() => router.push("/")}
+//                 style={primaryBtn}
+//               >
+//                 Continue Shopping
+//               </button>
+//             </div>
+//           </div>
+//         )}
+
+//         {/* TIMEOUT */}
+//         {status === "timeout" && (
+//           <div className={styles.errorContent}>
+//             <div className={styles.errorIcon}>⏱</div>
+//             <h2>Verification In Progress</h2>
+//             <p>Please check your orders later.</p>
+
+//             <button
+//               onClick={() => router.push("/orders")}
+//               style={{ ...primaryBtn, marginTop: "16px" }}
+//             >
+//               Go to Orders
+//             </button>
+//           </div>
+//         )}
+
+//         {/* ERROR */}
+//         {status === "error" && (
+//           <div className={styles.errorContent}>
+//             <div className={styles.errorIcon}>!</div>
+//             <h2>Something went wrong</h2>
+
+//             <button
+//               onClick={() => router.push("/")}
+//               style={{ ...primaryBtn, marginTop: "16px" }}
+//             >
+//               Continue Shopping
+//             </button>
+//           </div>
+//         )}
+
+//       </div>
+//     </div>
+//   );
+// }
+
+// /* Button Styles */
+// const primaryBtn = {
+//   padding: "12px",
+//   backgroundColor: "#ff6b00",
+//   color: "white",
+//   border: "none",
+//   borderRadius: "5px",
+//   cursor: "pointer",
+//   fontSize: "16px",
+//   fontWeight: "bold",
+// };
+
+// const secondaryBtn = {
+//   padding: "12px",
+//   backgroundColor: "#95a5a6",
+//   color: "white",
+//   border: "none",
+//   borderRadius: "5px",
+//   cursor: "pointer",
+//   fontSize: "16px",
+// };
+
+
+
 "use client";
 
 import React, { useEffect, useState, useRef } from "react";
@@ -36,6 +252,12 @@ export default function OrderRedirect() {
     };
   }, []);
 
+  const cleanupLocalStorage = () => {
+    localStorage.removeItem("pendingOrderId");
+    localStorage.removeItem("pendingCashfreeOrderId");
+    localStorage.removeItem("pendingOrderAmount");
+  };
+
   const pollOrderStatus = (orderId) => {
     attemptsRef.current = 0;
     checkOrderStatus(orderId);
@@ -51,7 +273,7 @@ export default function OrderRedirect() {
       }
 
       checkOrderStatus(orderId);
-    }, 1000);
+    }, 2000); // Increased interval slightly to give backend time to sync
   };
 
   const checkOrderStatus = async (orderId) => {
@@ -69,47 +291,53 @@ export default function OrderRedirect() {
       if (!response.data?.success) return;
 
       const orderStatus = response.data.data.status;
-      console.log(orderStatus,"sssssssssss")
+      console.log("Current Order Status:", orderStatus);
+
+      // 1. SUCCESS: Order is confirmed
       if (orderStatus === "confirmed") {
         clearInterval(pollingRef.current);
         setStatus("success");
-        // toast.success("Payment successful!");
-        localStorage.setItem("orderId",response?.data?.data?.orderId)
-        localStorage.removeItem("pendingOrderId");
-        localStorage.removeItem("pendingCashfreeOrderId");
-        localStorage.removeItem("pendingOrderAmount");
+        
+        localStorage.setItem("orderId", response?.data?.data?.orderId);
+        cleanupLocalStorage();
 
         await db.cart.clear();
         setLoading(false);
       }
 
+      // 2. CANCELLED / FAILED: Handle Back button or Payment Failure
       if (orderStatus === "failed" || orderStatus === "cancelled") {
         clearInterval(pollingRef.current);
         setStatus("failed");
-        toast.error("Payment failed or cancelled");
-
-        localStorage.removeItem("pendingOrderId");
-        localStorage.removeItem("pendingCashfreeOrderId");
-        localStorage.removeItem("pendingOrderAmount");
-
+        
+        cleanupLocalStorage();
         setLoading(false);
+
+        // Notify user and redirect back to cart
+        toast.warn("Payment was not completed. Redirecting to cart...");
+        
+        setTimeout(() => {
+          router.push("/cart");
+        }, 2500);
       }
+
     } catch (error) {
       console.error("Order status check failed", error);
+      // We don't clear interval here to allow for temporary network glitches
     }
   };
 
   return (
     <div className={styles.container}>
-      <ToastContainer />
+      <ToastContainer position="top-center" autoClose={3000} />
       <div className={styles.card}>
 
         {/* PROCESSING */}
         {loading && status === "processing" && (
           <div className={styles.content}>
             <div className={styles.spinner} />
-            <h2>Processing Payment</h2>
-            <p>Please wait while we confirm your payment</p>
+            <h2>Verifying Payment</h2>
+            <p>Please do not refresh the page...</p>
           </div>
         )}
 
@@ -118,6 +346,7 @@ export default function OrderRedirect() {
           <div className={styles.successContent}>
             <div className={styles.successIcon}>✓</div>
             <h2>Payment Successful!</h2>
+            <p>Your order has been placed successfully.</p>
 
             <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginTop: "20px" }}>
               <button
@@ -137,18 +366,19 @@ export default function OrderRedirect() {
           </div>
         )}
 
-        {/* FAILED */}
+        {/* FAILED / CANCELLED */}
         {status === "failed" && (
           <div className={styles.failedContent}>
             <div className={styles.failedIcon}>✕</div>
-            <h2>Payment Failed</h2>
-
+            <h2>Payment Cancelled</h2>
+            <p>Redirecting you back to your cart to try again...</p>
+            
             <div style={{ marginTop: "20px" }}>
               <button
-                onClick={() => router.push("/")}
+                onClick={() => router.push("/cart")}
                 style={primaryBtn}
               >
-                Continue Shopping
+                Go to Cart Now
               </button>
             </div>
           </div>
@@ -158,14 +388,14 @@ export default function OrderRedirect() {
         {status === "timeout" && (
           <div className={styles.errorContent}>
             <div className={styles.errorIcon}>⏱</div>
-            <h2>Verification In Progress</h2>
-            <p>Please check your orders later.</p>
+            <h2>Verification Taking Longer</h2>
+            <p>We haven't received confirmation yet. It might take a few minutes.</p>
 
             <button
               onClick={() => router.push("/orders")}
               style={{ ...primaryBtn, marginTop: "16px" }}
             >
-              Go to Orders
+              Check My Orders
             </button>
           </div>
         )}
@@ -174,13 +404,14 @@ export default function OrderRedirect() {
         {status === "error" && (
           <div className={styles.errorContent}>
             <div className={styles.errorIcon}>!</div>
-            <h2>Something went wrong</h2>
+            <h2>Session Expired</h2>
+            <p>We couldn't find your pending order details.</p>
 
             <button
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/cart")}
               style={{ ...primaryBtn, marginTop: "16px" }}
             >
-              Continue Shopping
+              Return to Cart
             </button>
           </div>
         )}
@@ -192,7 +423,7 @@ export default function OrderRedirect() {
 
 /* Button Styles */
 const primaryBtn = {
-  padding: "12px",
+  padding: "12px 24px",
   backgroundColor: "#ff6b00",
   color: "white",
   border: "none",
@@ -203,7 +434,7 @@ const primaryBtn = {
 };
 
 const secondaryBtn = {
-  padding: "12px",
+  padding: "12px 24px",
   backgroundColor: "#95a5a6",
   color: "white",
   border: "none",
