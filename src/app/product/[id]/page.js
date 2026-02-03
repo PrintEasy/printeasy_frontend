@@ -414,7 +414,7 @@ const ProductDetails = () => {
       cashfree
         .checkout({
           paymentSessionId,
-          redirectTarget: document.getElementById("cashfree-dropin"),
+          redirectTarget: "cashfree-dropin",
         })
         .then((result) => {
           if (result?.paymentDetails) {

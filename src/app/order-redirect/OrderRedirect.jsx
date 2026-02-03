@@ -54,107 +54,50 @@ export default function OrderRedirect() {
     }, 1000);
   };
 
-  // const checkOrderStatus = async (orderId) => {
-  //   try {
-  //     const response = await api.get(
-  //       `/v1/payment/order-status?orderId=${orderId}`,
-  //       {
-  //         headers: {
-  //           "x-api-key":
-  //             "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
-  //         },
-  //       }
-  //     );
-
-  //     if (!response.data?.success) return;
-
-  //     const orderStatus = response.data.data.status;
-  //     console.log(orderStatus,"sssssssssss")
-  //     if (orderStatus === "confirmed") {
-  //       clearInterval(pollingRef.current);
-  //       setStatus("success");
-  //       // toast.success("Payment successful!");
-  //       localStorage.setItem("orderId",response?.data?.data?.orderId)
-  //       localStorage.removeItem("pendingOrderId");
-  //       localStorage.removeItem("pendingCashfreeOrderId");
-  //       localStorage.removeItem("pendingOrderAmount");
-
-  //       await db.cart.clear();
-  //       setLoading(false);
-  //     }
-
-  //     if (orderStatus === "failed" || orderStatus === "cancelled") {
-  //       clearInterval(pollingRef.current);
-  //       setStatus("failed");
-  //       toast.error("Payment failed or cancelled");
-
-  //       localStorage.removeItem("pendingOrderId");
-  //       localStorage.removeItem("pendingCashfreeOrderId");
-  //       localStorage.removeItem("pendingOrderAmount");
-
-  //       setLoading(false);
-  //     }
-  //   } catch (error) {
-  //     console.error("Order status check failed", error);
-  //   }
-  // };
-
-
   const checkOrderStatus = async (orderId) => {
-  try {
-    const response = await api.get(`/v1/payment/order-status?orderId=${orderId}`, {
-      headers: {  "x-api-key":
-              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10" },
-    });
+    try {
+      const response = await api.get(
+        `/v1/payment/order-status?orderId=${orderId}`,
+        {
+          headers: {
+            "x-api-key":
+              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
+          },
+        }
+      );
 
-    if (!response.data?.success) return;
+      if (!response.data?.success) return;
 
-    const orderStatus = response.data.data.status;
+      const orderStatus = response.data.data.status;
+      console.log(orderStatus,"sssssssssss")
+      if (orderStatus === "confirmed") {
+        clearInterval(pollingRef.current);
+        setStatus("success");
+        // toast.success("Payment successful!");
+        localStorage.setItem("orderId",response?.data?.data?.orderId)
+        localStorage.removeItem("pendingOrderId");
+        localStorage.removeItem("pendingCashfreeOrderId");
+        localStorage.removeItem("pendingOrderAmount");
 
-    // 1. SUCCESS: User paid
-    if (orderStatus === "confirmed" || orderStatus === "PAID") {
-      clearInterval(pollingRef.current);
-      setStatus("success");
-      localStorage.setItem("orderId", response?.data?.data?.orderId);
-      cleanupLocalStorage();
-      await db.cart.clear();
-      setLoading(false);
-      return;
+        await db.cart.clear();
+        setLoading(false);
+      }
+
+      if (orderStatus === "failed" || orderStatus === "cancelled") {
+        clearInterval(pollingRef.current);
+        setStatus("failed");
+        toast.error("Payment failed or cancelled");
+
+        localStorage.removeItem("pendingOrderId");
+        localStorage.removeItem("pendingCashfreeOrderId");
+        localStorage.removeItem("pendingOrderAmount");
+
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error("Order status check failed", error);
     }
-
-    // 2. IMMEDIATE FAILURE: Payment was explicitly rejected or cancelled
-    const failureStates = ["failed", "cancelled", "FAILED", "CANCELLED", "EXPIRED"];
-    if (failureStates.includes(orderStatus)) {
-      handleNoPayment();
-      return;
-    }
-
-    // 3. RETURNING WITHOUT PAYING: Status remains 'ACTIVE'
-    // If we've checked 3 times (6 seconds) and it's still ACTIVE, 
-    // the user likely just came back to the site without finishing the bank flow.
-    if (attemptsRef.current > 3 && (orderStatus === "ACTIVE" || orderStatus === "processing")) {
-      handleNoPayment();
-    }
-
-  } catch (error) {
-    console.error("Order status check failed", error);
-  }
-};
-
-// Clean helper to handle the "Not Paid" state
-const handleNoPayment = () => {
-  clearInterval(pollingRef.current);
-  setStatus("failed");
-  cleanupLocalStorage();
-  setLoading(false);
-
-  toast.warn("Payment was not completed. Redirecting to cart...");
-  
-  setTimeout(() => {
-    router.push("/cart");
-  }, 2500);
-};
-
+  };
 
   return (
     <div className={styles.container}>
