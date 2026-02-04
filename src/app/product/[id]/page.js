@@ -410,20 +410,23 @@ const ProductDetails = () => {
       // setShowProductUI(false);
 
       const cashfree = await load({ mode: "production" });
-
-      cashfree
-        .checkout({
-          paymentSessionId,
-          redirectTarget: true,
-        })
-        .then((result) => {
-          if (result?.paymentDetails) {
-            window.location.href = `/order-redirect?order_id=${cashfreeOrderId}`;
-          } else if (result?.error) {
-            toast.error("Payment failed");
-            // setShowProductUI(true);
-          }
-        });
+      cashfree.checkout({
+        paymentSessionId,
+        redirect: true,
+      });
+      // cashfree
+      //   .checkout({
+      //     paymentSessionId,
+      //     redirectTarget: true,
+      //   })
+      //   .then((result) => {
+      //     if (result?.paymentDetails) {
+      //       window.location.href = `/order-redirect?order_id=${cashfreeOrderId}`;
+      //     } else if (result?.error) {
+      //       toast.error("Payment failed");
+      //       // setShowProductUI(true);
+      //     }
+      //   });
     } catch (error) {
       console.error("Payment error:", error);
       toast.error("Failed to initiate payment");
