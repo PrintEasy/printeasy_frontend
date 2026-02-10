@@ -382,7 +382,7 @@ const ProductDetails = () => {
         "/v1/orders/create",
         {
           paymentMethod: "ONLINE",
-          totalAmount: product?.discountedPrice,
+          totalAmount: product?.discountedPrice + 50,
           items: finalItems,
         },
         {
