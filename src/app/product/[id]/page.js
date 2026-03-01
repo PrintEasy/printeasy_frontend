@@ -26,6 +26,7 @@ import ProductSchema from "@/component/seo/ProductSchema";
 import ProductPixel from "@/component/seo/ProductPixel";
 import YouMayLikeSection from "@/component/YouMayLikeSection/YouMayLikeSection";
 import { ChevronUp } from "lucide-react";
+import OfferMarquee from "@/component/OfferMarquee/OfferMarquee";
 
 const ProductDetails = () => {
   const { id } = useParams();
@@ -541,7 +542,9 @@ const ProductDetails = () => {
               onLoad={() => setEditorReady(true)}
             />
           )}
-
+          <div className={styles.mobview}>
+                <OfferMarquee />
+                </div>
           {/* Info Section */}
           <div
             className={`${styles.infoSection} ${
@@ -567,6 +570,7 @@ const ProductDetails = () => {
                 </span>
               )}
             </div>
+            
 
             {/* Size Selection */}
             {product?.configuration?.[0]?.options?.length > 0 && (
@@ -655,7 +659,7 @@ const ProductDetails = () => {
                 <p>(click to select size)</p>
               </button>
             </div>
-
+            
             {/* Details Accordion */}
             <div className={styles.accordion}>
               {[
@@ -687,7 +691,7 @@ const ProductDetails = () => {
                 </div>
               ))}
             </div>
-
+              
             {/* Size Selection Sheet (Triggered if no size selected) */}
             <BottomSheet
               open={showSizeSheet}
@@ -750,6 +754,9 @@ const ProductDetails = () => {
             </BottomSheet>
           </div>
         </div>
+                <div className={styles.webview}>
+                <OfferMarquee />
+                </div>
 
         <section
           style={{ width: "100%", overflowX: "auto", marginTop: "16px" }}
