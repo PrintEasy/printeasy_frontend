@@ -32,7 +32,14 @@ import { useCart } from "@/context/CartContext";
 import bag from "../../../assessts/bag.svg";
 import share from "../../../assessts/share.svg";
 import ShirtEditor from "@/component/shirtEditor/ShirtEditor";
-import { load } from "@cashfreepayments/cashfree-js";
+import {
+  createOrder,
+  getCashfreeSessionError,
+  getFirebaseUidFromToken,
+  launchCashfreeCheckout,
+  PAYMENT_METHOD,
+  persistPendingOrder,
+} from "@/lib/payment";
 import DynamicModal from "@/component/Modal/Modal";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
 import { createSlug } from "@/app/helper";
@@ -686,55 +693,21 @@ const ProductDetails = () => {
         },
       ];
 
-      const orderRes = await api.post(
-        "/v1/orders/create",
-        {
-          paymentMethod: "ONLINE",
-          totalAmount: product?.discountedPrice,
-          items: finalItems,
-        },
-        {
-          headers: {
-            "x-api-key":
-              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
-          },
-        }
-      );
+      const orderData = await createOrder({
+        paymentMethod: PAYMENT_METHOD.ONLINE,
+        totalAmount: product?.discountedPrice,
+        items: finalItems,
+        user: { id: getFirebaseUidFromToken(accessToken) },
+      });
 
-      const orderData = orderRes?.data?.data;
-      const paymentSessionId = orderData?.cashfree?.sessionId;
-      const cashfreeOrderId = orderData?.cashfree?.orderId;
-      const backendOrderId = orderData?.orderId;
-
-      if (!paymentSessionId) {
-        toast.error("Payment session not generated");
+      const cashfreeError = getCashfreeSessionError(orderData);
+      if (cashfreeError) {
+        toast.error(cashfreeError);
         return;
       }
 
-      localStorage.setItem("pendingOrderId", backendOrderId);
-      localStorage.setItem("pendingCashfreeOrderId", cashfreeOrderId);
-      localStorage.setItem("pendingOrderAmount", product?.discountedPrice);
-
-      // setShowProductUI(false);
-
-      const cashfree = await load({ mode: "production" });
-      cashfree.checkout({
-        paymentSessionId,
-        redirect: true,
-      });
-      // cashfree
-      //   .checkout({
-      //     paymentSessionId,
-      //     redirectTarget: true,
-      //   })
-      //   .then((result) => {
-      //     if (result?.paymentDetails) {
-      //       window.location.href = `/order-redirect?order_id=${cashfreeOrderId}`;
-      //     } else if (result?.error) {
-      //       toast.error("Payment failed");
-      //       // setShowProductUI(true);
-      //     }
-      //   });
+      persistPendingOrder(orderData, PAYMENT_METHOD.ONLINE);
+      await launchCashfreeCheckout(orderData.cashfree.sessionId);
     } catch (error) {
       console.error("Payment error:", error);
       toast.error("Failed to initiate payment");

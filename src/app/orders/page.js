@@ -7,6 +7,7 @@ import styles from "./orders.module.scss";
 import api from "@/axiosInstance/axiosInstance";
 import Cookies from "js-cookie";
 import Header from "@/component/header/Header";
+import { isPartialCodOrder } from "@/lib/payment";
 
 const Page = () => {
   const router = useRouter();
@@ -133,6 +134,20 @@ const Page = () => {
         {order.status}
       </span>
     </div>
+
+    {isPartialCodOrder(order) && (
+      <div className={styles.partialCodSection}>
+        <span className={styles.partialCodBadge}>Partial COD</span>
+        <div className={styles.partialCodBreakdown}>
+          <p>
+            Paid online: ₹{order.advanceAmount ?? 0}
+            {order.advancePaid ? " ✓" : ""}
+          </p>
+          <p>Due on delivery: ₹{order.codAmount ?? 0}</p>
+          <p className={styles.partialCodTotal}>Order total: ₹{order.totalAmount}</p>
+        </div>
+      </div>
+    )}
 
     {/* ✅ MULTIPLE PRODUCTS */}
     {order.items?.map((item, index) => (

@@ -12,7 +12,15 @@ import "react-toastify/dist/ReactToastify.css";
 import api from "@/axiosInstance/axiosInstance";
 import { db } from "@/lib/db";
 import Cookies from "js-cookie";
-import { load } from "@cashfreepayments/cashfree-js";
+import {
+  PAYMENT_METHOD,
+  createOrder,
+  getCashfreeSessionError,
+  getFirebaseUidFromToken,
+  launchCashfreeCheckout,
+  mapAddressForOrder,
+  persistPendingOrder,
+} from "@/lib/payment";
 import DynamicModal from "@/component/Modal/Modal";
 import LoginForm from "../signup/LogIn/LoginForm";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
@@ -30,6 +38,8 @@ const Cart = () => {
   const [isLoginModalVisible, setIsLoginModalVisible] = useState(false);
   const [cartLoader, setCartLoader] = useState(false);
   const [showCartUI, setShowCartUI] = useState(true);
+  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.ONLINE);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   console.log(cartItems,"shssjsuuyyy")
 
@@ -139,97 +149,76 @@ const Cart = () => {
       }
     : null;
 
-  // ----------------- Cashfree EMBEDDED Integration -----------------
-  const handlePayNow = async () => {
+  const hasCustomizable = cartItems.some((item) => item.isCustomizable);
+  const defaultAddress = addressList.find((addr) => addr.isDefault === true);
+
+  const handlePlaceOrder = async (selectedMethod, finalPayable) => {
     if (cartItems.length === 0) {
       toast.warning("Your cart is empty!");
       return;
     }
 
-    try {
-      window.scrollTo(0, 0);
-      const finalItems = orderPayloadItems.map((item) => {
-        if (!item.isCustomizable) return item;
+    if (selectedMethod === PAYMENT_METHOD.COD && !defaultAddress) {
+      toast.warning("Please add a delivery address for cash on delivery.");
+      router.push("/address");
+      return;
+    }
 
-        return {
-          ...item,
-        };
+    try {
+      setIsSubmitting(true);
+      setCartLoader(true);
+      window.scrollTo(0, 0);
+
+      const finalItems = orderPayloadItems.map((item) => ({ ...item }));
+      const uid = getFirebaseUidFromToken(accessToken);
+      const user =
+        selectedMethod === PAYMENT_METHOD.COD
+          ? {
+              id: uid,
+              address: mapAddressForOrder({
+                name: defaultAddress?.name,
+                line1: defaultAddress?.line1,
+                line2: defaultAddress?.line2,
+                city: defaultAddress?.city,
+                state: defaultAddress?.state,
+                country: defaultAddress?.country,
+                pincode: defaultAddress?.pincode,
+                phone: defaultAddress?.phone,
+              }),
+            }
+          : { id: uid };
+
+      const orderData = await createOrder({
+        paymentMethod: selectedMethod,
+        totalAmount: finalPayable,
+        items: finalItems,
+        user,
       });
 
-      const orderRes = await api.post(
-        "/v1/orders/create",
-        {
-          paymentMethod: "ONLINE",
-          totalAmount: grandTotal,
-          items: finalItems,
-        },
-        {
-          headers: {
-            "x-api-key":
-              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
-          },
-        },
-      );
-
-      const orderData = orderRes?.data?.data;
-      const paymentSessionId = orderData?.cashfree?.sessionId;
-      const cashfreeOrderId = orderData?.cashfree?.orderId;
-      const backendOrderId = orderData?.orderId;
-
-      if (!paymentSessionId) {
-        toast.error("Payment session not generated");
-        setCartLoader(false);
+      const cashfreeError = getCashfreeSessionError(orderData);
+      if (cashfreeError) {
+        toast.error(cashfreeError);
         return;
       }
 
-      // Store order data in localStorage for redirect page
-      localStorage.setItem("pendingOrderId", backendOrderId);
-      localStorage.setItem("pendingCashfreeOrderId", cashfreeOrderId);
-      localStorage.setItem("pendingOrderAmount", grandTotal.toString());
+      if (selectedMethod === PAYMENT_METHOD.COD) {
+        localStorage.setItem("orderId", orderData.orderId);
+        await db.cart.clear();
+        toast.success("Order placed successfully!");
+        router.push("/orders");
+        return;
+      }
 
-      console.log("Initiating Cashfree EMBEDDED payment:", {
-        backendOrderId,
-        cashfreeOrderId,
-        paymentSessionId,
-      });
-
-      // Hide cart UI and show embedded checkout
-      // setShowCartUI(false);
-      setCartLoader(false);
-
-      const cashfree = await load({ mode: "production" });
-      cashfree.checkout({
-  paymentSessionId,
-  redirect: true,
-});
-      // // EMBEDDED checkout with redirectTarget to specific div
-      // const checkoutOptions = {
-      //   paymentSessionId: paymentSessionId,
-      //   redirect: true,
-      // };
-
-      // cashfree.checkout(checkoutOptions).then((result) => {
-      //   console.log("Cashfree SDK result:", result);
-
-      //   if (result.error) {
-      //     console.error("SDK Error:", result.error);
-      //     toast.error(result.error.message || "Payment failed");
-      //     // setShowCartUI(true);
-      //     return;
-      //   }
-      //   if (result.paymentDetails) {
-      //     console.log("Payment completed, details:", result.paymentDetails);
-      //     window.location.href = `/order-redirect?order_id=${cashfreeOrderId}&backend_order_id=${backendOrderId}`;
-      //   }
-      //   if (result.redirect) {
-      //     console.log("SDK is redirecting...");
-      //   }
-      // });
+      persistPendingOrder(orderData, selectedMethod);
+      await launchCashfreeCheckout(orderData.cashfree.sessionId);
     } catch (error) {
       console.error("Payment error:", error);
-      toast.error("Failed to initiate payment");
+      toast.error(
+        error?.response?.data?.message || "Failed to initiate payment"
+      );
+    } finally {
+      setIsSubmitting(false);
       setCartLoader(false);
-      // setShowCartUI(true);
     }
   };
 
@@ -353,8 +342,12 @@ const Cart = () => {
                   <PriceList
                     bagTotal={bagTotal}
                     grandTotal={grandTotal}
-                    handlePayNow={handlePayNow}
+                    paymentMethod={paymentMethod}
+                    onPaymentMethodChange={setPaymentMethod}
+                    onPlaceOrder={handlePlaceOrder}
                     offerData={offerData}
+                    hasCustomizable={hasCustomizable}
+                    isSubmitting={isSubmitting}
                   />
                 </div>
               </div>
