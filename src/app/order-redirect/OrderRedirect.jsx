@@ -4,8 +4,14 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import api from "@/axiosInstance/axiosInstance";
 import { db } from "@/lib/db";
+import {
+  PAYMENT_METHOD,
+  buildVerifyPaymentPayload,
+  clearPendingOrderStorage,
+  fetchOrderStatus,
+  verifyPayment,
+} from "@/lib/payment";
 import styles from "./orderRedirect.module.scss";
 
 export default function OrderRedirect() {
@@ -14,50 +20,53 @@ export default function OrderRedirect() {
 
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState("processing");
+  const [partialSummary, setPartialSummary] = useState(null);
 
   const pollingRef = useRef(null);
   const attemptsRef = useRef(0);
   const maxAttempts = 15;
 
+  const handleSuccess = async (orderId) => {
+    clearInterval(pollingRef.current);
+    setStatus("success");
+    localStorage.setItem("orderId", orderId);
+    clearPendingOrderStorage();
+    await db.cart.clear();
+    setLoading(false);
+  };
+
+  const handleFailure = () => {
+    clearInterval(pollingRef.current);
+    setStatus("failed");
+    toast.error("Payment failed or cancelled");
+    clearPendingOrderStorage();
+    setLoading(false);
+  };
+
   const checkOrderStatus = async (orderId) => {
     try {
-      const response = await api.get(
-        `/v1/payment/order-status?orderId=${orderId}`,
-        {
-          headers: {
-            "x-api-key":
-              "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
-          },
-        }
-      );
+      const response = await fetchOrderStatus(orderId);
+      if (!response?.success) return;
 
-      if (!response.data?.success) return;
+      const orderData = response.data;
+      const orderStatus = orderData.status;
 
-      const orderStatus = response.data.data.status;
-      console.log(orderStatus,"sssssssssss")
       if (orderStatus === "confirmed") {
-        clearInterval(pollingRef.current);
-        setStatus("success");
-        // toast.success("Payment successful!");
-        localStorage.setItem("orderId",response?.data?.data?.orderId)
-        localStorage.removeItem("pendingOrderId");
-        localStorage.removeItem("pendingCashfreeOrderId");
-        localStorage.removeItem("pendingOrderAmount");
-
-        await db.cart.clear();
-        setLoading(false);
+        if (orderData.paymentMethod === PAYMENT_METHOD.PARTIAL_COD) {
+          setPartialSummary({
+            advanceAmount:
+              orderData.advanceAmount ??
+              localStorage.getItem("pendingAdvanceAmount"),
+            codAmount:
+              orderData.codAmount ?? localStorage.getItem("pendingCodAmount"),
+            totalAmount: orderData.totalAmount,
+          });
+        }
+        await handleSuccess(orderData.orderId || orderId);
       }
 
       if (orderStatus === "failed" || orderStatus === "cancelled") {
-        clearInterval(pollingRef.current);
-        setStatus("failed");
-        toast.error("Payment failed or cancelled");
-
-        localStorage.removeItem("pendingOrderId");
-        localStorage.removeItem("pendingCashfreeOrderId");
-        localStorage.removeItem("pendingOrderAmount");
-
-        setLoading(false);
+        handleFailure();
       }
     } catch (error) {
       console.error("Order status check failed", error);
@@ -83,7 +92,9 @@ export default function OrderRedirect() {
   };
 
   useEffect(() => {
-    const backendOrderId = localStorage.getItem("pendingOrderId");
+    const backendOrderId =
+      searchParams.get("backend_order_id") ||
+      localStorage.getItem("pendingOrderId");
 
     if (!backendOrderId) {
       queueMicrotask(() => {
@@ -94,23 +105,73 @@ export default function OrderRedirect() {
       return undefined;
     }
 
+    const pendingMethod = localStorage.getItem("pendingPaymentMethod");
+    if (pendingMethod === PAYMENT_METHOD.PARTIAL_COD) {
+      setPartialSummary({
+        advanceAmount: localStorage.getItem("pendingAdvanceAmount"),
+        codAmount: localStorage.getItem("pendingCodAmount"),
+      });
+    }
+
     let cancelled = false;
+
+    const run = async () => {
+      try {
+        const verifyPayload = buildVerifyPaymentPayload(
+          searchParams,
+          backendOrderId
+        );
+        const txStatus = (verifyPayload.txStatus || "").toUpperCase();
+
+        if (txStatus && txStatus !== "SUCCESS") {
+          handleFailure();
+          return;
+        }
+
+        const verifyResult = await verifyPayment(verifyPayload);
+        if (verifyResult?.status === "confirmed") {
+          if (pendingMethod === PAYMENT_METHOD.PARTIAL_COD) {
+            setPartialSummary({
+              advanceAmount:
+                verifyResult.advanceAmount ??
+                localStorage.getItem("pendingAdvanceAmount"),
+              codAmount:
+                verifyResult.codAmount ??
+                localStorage.getItem("pendingCodAmount"),
+              totalAmount: verifyResult.totalAmount,
+            });
+          }
+          if (!cancelled) {
+            await handleSuccess(verifyResult.orderId || backendOrderId);
+          }
+          return;
+        }
+      } catch (error) {
+        console.error("Payment verify failed, falling back to polling", error);
+      }
+
+      if (!cancelled) {
+        pollOrderStatus(backendOrderId);
+      }
+    };
+
     queueMicrotask(() => {
-      if (!cancelled) pollOrderStatus(backendOrderId);
+      if (!cancelled) void run();
     });
 
     return () => {
       cancelled = true;
       if (pollingRef.current) clearInterval(pollingRef.current);
     };
-  }, []);
+  }, [searchParams]);
+
+  const isPartialCod =
+    partialSummary?.advanceAmount != null && partialSummary?.codAmount != null;
 
   return (
     <div className={styles.container}>
       <ToastContainer />
       <div className={styles.card}>
-
-        {/* PROCESSING */}
         {loading && status === "processing" && (
           <div className={styles.content}>
             <div className={styles.spinner} />
@@ -119,13 +180,31 @@ export default function OrderRedirect() {
           </div>
         )}
 
-        {/* SUCCESS */}
         {status === "success" && (
           <div className={styles.successContent}>
             <div className={styles.successIcon}>✓</div>
             <h2>Payment Successful!</h2>
 
-            <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginTop: "20px" }}>
+            {isPartialCod && (
+              <div className={styles.partialCodSuccess}>
+                <p>₹{partialSummary.advanceAmount} paid online</p>
+                <p>₹{partialSummary.codAmount} to be collected on delivery</p>
+                {partialSummary.totalAmount != null && (
+                  <p className={styles.partialCodTotal}>
+                    Order total: ₹{partialSummary.totalAmount}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div
+              style={{
+                display: "flex",
+                gap: "10px",
+                justifyContent: "center",
+                marginTop: "20px",
+              }}
+            >
               <button
                 onClick={() => router.push("/orders")}
                 style={primaryBtn}
@@ -133,50 +212,41 @@ export default function OrderRedirect() {
                 View Orders
               </button>
 
-              <button
-                onClick={() => router.push("/")}
-                style={secondaryBtn}
-              >
+              <button onClick={() => router.push("/")} style={secondaryBtn}>
                 Continue Shopping
               </button>
             </div>
           </div>
         )}
 
-        {/* FAILED */}
         {status === "failed" && (
           <div className={styles.failedContent}>
             <div className={styles.failedIcon}>✕</div>
             <h2>Payment Failed</h2>
 
             <div style={{ marginTop: "20px" }}>
-              <button
-                onClick={() => router.push("/")}
-                style={primaryBtn}
-              >
+              <button onClick={() => router.push("/")} style={primaryBtn}>
                 Continue Shopping
               </button>
             </div>
           </div>
         )}
 
-        {/* TIMEOUT */}
         {status === "timeout" && (
           <div className={styles.errorContent}>
             <div className={styles.errorIcon}>⏱</div>
-            <h2>Payment Cancelled</h2>
-            <p>Order failed! Please try again</p>
+            <h2>Payment Pending</h2>
+            <p>
+              We could not confirm your payment yet. If money was deducted,
+              check your orders or contact support.
+            </p>
 
-            <button
-                onClick={() => router.push("/")}
-                style={primaryBtn}
-              >
-                Continue Shopping
-              </button>
+            <button onClick={() => router.push("/orders")} style={primaryBtn}>
+              View Orders
+            </button>
           </div>
         )}
 
-        {/* ERROR */}
         {status === "error" && (
           <div className={styles.errorContent}>
             <div className={styles.errorIcon}>!</div>
@@ -190,13 +260,11 @@ export default function OrderRedirect() {
             </button>
           </div>
         )}
-
       </div>
     </div>
   );
 }
 
-/* Button Styles */
 const primaryBtn = {
   padding: "12px",
   backgroundColor: "#ff6b00",
@@ -217,6 +285,3 @@ const secondaryBtn = {
   cursor: "pointer",
   fontSize: "16px",
 };
-
-
-

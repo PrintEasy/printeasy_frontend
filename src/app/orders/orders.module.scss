@@ -51,6 +51,41 @@
   color: #1b8f4b;
 }
 
+.partialCodSection {
+  margin: 12px 0 4px;
+  padding: 12px 14px;
+  background: #fff8f3;
+  border: 1px solid #f0dcc8;
+  border-radius: 8px;
+}
+
+.partialCodBadge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #ff6b00;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.partialCodBreakdown {
+  margin-top: 10px;
+  font-size: 14px;
+
+  p {
+    margin: 4px 0;
+  }
+}
+
+.partialCodTotal {
+  margin-top: 6px !important;
+  color: #666;
+  font-size: 13px !important;
+}
+
 /* PRODUCT */
 .product_section {
   display: flex;
