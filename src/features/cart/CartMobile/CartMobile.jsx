@@ -307,7 +307,7 @@ const CartMobile = ({
           <div className={styles.fcProof}>
             <span className={styles.fcProofIcon}>❤️</span>
             <span className={styles.fcProofTxt}>
-              Trusted by <strong>{FOMO_USERS.length}+ happy parents</strong>{" "}
+              Trusted by <strong>2,000+ happy parents</strong>{" "}
               across India
             </span>
           </div>
@@ -731,10 +731,10 @@ const CartMobile = ({
           <div className={`${styles.icIcon} ${styles.icIconH}`}>🏆</div>
           <div className={styles.icBody}>
             <div className={styles.icTitle}>
-              {FOMO_USERS.length}+ Happy Parents
+              2,000+ Happy Parents
             </div>
             <div className={styles.icSub}>
-              Families across India trust Onrise for personalised kids'
+              Families across India trust Onrise for personalised kids&apos;
               clothing. Every order made with love and checked before shipping.
             </div>
           </div>
@@ -763,9 +763,9 @@ const CartMobile = ({
           <div className={styles.icBody}>
             <div className={styles.icTitle}>WhatsApp Confirmation</div>
             <div className={styles.icSub}>
-              After ordering you'll receive a WhatsApp message confirming your
-              child's name, design &amp; delivery date. Production starts only
-              after your confirmation.
+              After ordering you&apos;ll receive a WhatsApp message confirming
+              your child&apos;s name, design &amp; delivery date. Production
+              starts only after your confirmation.
             </div>
           </div>
         </div>
@@ -802,14 +802,14 @@ const CartMobile = ({
           <div className={styles.btTxt}>
             Onrise is a <span className={styles.pe}>PrintEasy</span> brand
             &nbsp;·&nbsp;
-            <strong>Trusted by {FOMO_USERS.length}+ families</strong>{" "}
+            <strong>Trusted by 2,000+ families</strong>{" "}
             &nbsp;·&nbsp; Safe &amp; secure checkout
           </div>
         </div>
         {savings > 0 && (
           <div className={styles.svPill}>
             <div className={styles.svPillIn}>
-              🎉 You're saving {formatINR(savings)} on this order
+              🎉 You&apos;re saving {formatINR(savings)} on this order
             </div>
           </div>
         )}

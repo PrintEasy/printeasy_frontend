@@ -286,73 +286,169 @@ const Cart = () => {
               </div>
 
               <div className={styles.desktopOnly}>
-              <button
-                className={styles.iconBtn}
-                onClick={() => router.push("/")}
-              >
-                <ChevronLeft size={22} />
-              </button>
+              <div className={styles.topNav}>
+                <button
+                  type="button"
+                  className={styles.navBack}
+                  onClick={() => router.push("/")}
+                  aria-label="Back"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <h1 className={styles.navTitle}>
+                  <span>ON</span>RISE — MY CART
+                </h1>
+                <span className={styles.navBadge}>
+                  {cartItems.length}{" "}
+                  {cartItems.length === 1 ? "Item" : "Items"}
+                </span>
+              </div>
+
               <CartRewards totalAmount={bagTotal} />
 
               <div className={styles.cartContainer}>
                 <div className={styles.cartItems}>
-                  {cartItems.map((item) => (
-                    <div key={item.id} className={styles.cartItem}>
-                      <div className={styles.itemImage}>
-                        <img src={item.productImageUrl} alt={item.name} />
-                      </div>
+                  <div className={styles.secLabel}>
+                    Your Items
+                    <span className={styles.secCount}>
+                      {cartItems.length}{" "}
+                      {cartItems.length === 1 ? "shirt" : "shirts"}
+                    </span>
+                  </div>
 
-                      <div className={styles.itemDetails}>
-                        <div className={styles.itemHeader}>
-                          <h3 className={styles.itemName}>{item.name}</h3>
-                          <button
-                            onClick={() => removeFromCart(item?.productId)}
-                            className={styles.removeBtn}
-                          >
-                            <Trash2 size={20} />
-                          </button>
+                  {cartItems.map((item) => {
+                    const sizeLabel = item?.options?.[0]?.value;
+                    const presetText = item?.presetText;
+                    const basePrice = Number(item?.basePrice) || 0;
+                    const discPrice =
+                      Number(item?.discountPrice) || basePrice;
+                    const save =
+                      Math.max(0, basePrice - discPrice) *
+                      (item.quantity || 1);
+
+                    return (
+                      <div key={item.id} className={styles.ci}>
+                        <div className={styles.ciTop}>
+                          <div className={styles.ciImg}>
+                            {item.productImageUrl ? (
+                              <img
+                                src={item.productImageUrl}
+                                alt={item.name}
+                              />
+                            ) : (
+                              <div className={styles.ciEmoji}>🎽</div>
+                            )}
+                            {item.isCustomizable && (
+                              <div className={styles.ciBadge}>
+                                PERSONALISED
+                              </div>
+                            )}
+                          </div>
+                          <div className={styles.ciInfo}>
+                            <h3 className={styles.ciName}>{item.name}</h3>
+                            {presetText &&
+                              presetText !== "Empty Text" && (
+                                <div className={styles.ciWord}>
+                                  <span className={styles.ciWordStar}>
+                                    ✦
+                                  </span>
+                                  <span className={styles.ciWordLbl}>
+                                    {String(presetText).toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+                            <div className={styles.ciTags}>
+                              {sizeLabel && (
+                                <span className={styles.ciTag}>
+                                  Size: {sizeLabel}
+                                </span>
+                              )}
+                              {item.isCustomizable && (
+                                <span className={styles.ciTag}>
+                                  Custom Print
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div className={styles.ciR}>
+                            {basePrice > discPrice && (
+                              <div className={styles.ciOld}>
+                                ₹{basePrice}
+                              </div>
+                            )}
+                            <div className={styles.ciPrice}>
+                              ₹{discPrice}
+                            </div>
+                            {save > 0 && (
+                              <div className={styles.ciSave}>
+                                Save ₹{save}
+                              </div>
+                            )}
+                          </div>
                         </div>
 
-                        <div className={styles.itemMeta}>
-                          <span>{item.options?.[0]?.value} |</span>
-                          <span className={styles.quantitySelector}>
-                            QTY |
-                            <select
-                              value={item.quantity}
-                              onChange={(e) =>
-                                handleQuantityChange(
-                                  item.id,
-                                  parseInt(e.target.value),
-                                )
+                        <div className={styles.ciBot}>
+                          <div className={styles.ciActs}>
+                            <button
+                              type="button"
+                              className={styles.ciWish}
+                              onClick={() =>
+                                addToWishlist(item?.productId)
                               }
                             >
-                              {[...Array(10).keys()].map((num) => (
-                                <option key={num + 1} value={num + 1}>
-                                  {num + 1}
-                                </option>
-                              ))}
-                            </select>
-                          </span>
-                        </div>
-
-                        <div className={styles.itemFooter}>
-                          <button
-                            className={styles.wishlistBtn}
-                            onClick={() => addToWishlist(item?.productId)}
-                          >
-                            <Heart size={16} fill="#ff4500" strokeWidth={0} />
-                            <span>MOVE TO WISHLIST</span>
-                          </button>
-                          <span className={styles.itemPrice}>
-                            <span className={styles.strikeValue}>
-                              ₹{item?.basePrice}
-                            </span>{" "}
-                            <span>₹{item?.discountPrice}</span>
-                          </span>
+                              <Heart
+                                size={16}
+                                fill="#ff4500"
+                                strokeWidth={0}
+                              />
+                              <span>Wishlist</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.ciDel}
+                              onClick={() =>
+                                removeFromCart(item?.productId)
+                              }
+                              aria-label="Remove item"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </div>
+                          <div className={styles.ciQty}>
+                            <button
+                              type="button"
+                              className={styles.qBtn}
+                              onClick={() =>
+                                handleQuantityChange(
+                                  item.id,
+                                  Math.max(1, (item.quantity || 1) - 1)
+                                )
+                              }
+                              aria-label="Decrease quantity"
+                            >
+                              −
+                            </button>
+                            <div className={styles.qN}>
+                              {item.quantity || 1}
+                            </div>
+                            <button
+                              type="button"
+                              className={styles.qBtn}
+                              onClick={() =>
+                                handleQuantityChange(
+                                  item.id,
+                                  (item.quantity || 1) + 1
+                                )
+                              }
+                              aria-label="Increase quantity"
+                            >
+                              +
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 <div className={styles.rightSection}>
