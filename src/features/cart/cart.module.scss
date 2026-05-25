@@ -7,14 +7,36 @@
     background: transparent;
     border: none;
     padding: 0;
-    display: flex;
+    display: none;
     align-items: center;
     cursor: pointer;
-    display: none;
 
     svg {
       stroke: #000;
     }
+  }
+}
+
+/* Show CartMobile only on small screens, hide the existing desktop layout on mobile. */
+.mobileOnly {
+  display: none;
+}
+
+.desktopOnly {
+  display: contents;
+}
+
+@media (max-width: 700px) {
+  .cartPage {
+    padding: 0;
+  }
+
+  .mobileOnly {
+    display: block;
+  }
+
+  .desktopOnly {
+    display: none;
   }
 }
 
@@ -123,11 +145,15 @@
   border: none;
   cursor: pointer;
   padding: 4px;
-  color: #999;
-  transition: color 0.3s;
+  color: #ff4500;
+  transition: opacity 0.3s;
+
+  svg {
+    stroke: #ff4500;
+  }
 
   &:hover {
-    color: #666;
+    opacity: 0.75;
   }
 }
 
@@ -183,11 +209,12 @@
   background: none;
   border: none;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: opacity 0.3s;
+  color: #ff4500;
 
   &:hover {
     opacity: 0.7;

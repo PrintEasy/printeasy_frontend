@@ -3,6 +3,9 @@ import styles from "./pricelist.module.scss";
 import { getApplicableRewards } from "@/lib/price";
 import { PAYMENT_METHOD, estimatePartialCodAmounts } from "@/lib/payment";
 
+const formatINR = (n) =>
+  `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+
 const PriceList = ({
   bagTotal,
   grandTotal,
@@ -23,15 +26,26 @@ const PriceList = ({
       ? estimatePartialCodAmounts(finalPayable)
       : null;
 
-  const payButtonLabel = (() => {
-    if (paymentMethod === PAYMENT_METHOD.PARTIAL_COD && partialEstimate) {
-      return `PAY ₹${partialEstimate.advanceAmount} NOW`;
-    }
-    if (paymentMethod === PAYMENT_METHOD.COD) {
-      return "PLACE ORDER (COD)";
-    }
-    return `PAY ₹${finalPayable}`;
-  })();
+  const savings = Math.max(0, 50 - shippingCost) + Number(discount || 0);
+
+  const ctaSub =
+    paymentMethod === PAYMENT_METHOD.PARTIAL_COD
+      ? "Book now · Pay rest at door"
+      : paymentMethod === PAYMENT_METHOD.COD
+      ? "Pay cash on delivery"
+      : "Pay Online · Total";
+
+  const ctaLabel =
+    paymentMethod === PAYMENT_METHOD.PARTIAL_COD
+      ? "Book Now"
+      : paymentMethod === PAYMENT_METHOD.COD
+      ? "Place Order"
+      : "Proceed to Pay";
+
+  const ctaAmount =
+    paymentMethod === PAYMENT_METHOD.PARTIAL_COD && partialEstimate
+      ? formatINR(partialEstimate.advanceAmount)
+      : formatINR(finalPayable);
 
   return (
     <div className={styles.priceDetails}>
@@ -127,13 +141,32 @@ const PriceList = ({
           )}
         </div>
 
+        {savings > 0 && (
+          <div className={styles.svPill}>
+            <div className={styles.svPillIn}>
+              🎉 You're saving {formatINR(savings)} on this order
+            </div>
+          </div>
+        )}
+
         <button
           type="button"
-          className={styles.payBtn}
+          className={styles.coBtn}
           onClick={() => onPlaceOrder(paymentMethod, finalPayable)}
           disabled={isSubmitting}
         >
-          {isSubmitting ? "PLEASE WAIT..." : payButtonLabel}
+          <div className={styles.coL}>
+            <div className={styles.coSub}>
+              {isSubmitting ? "Processing..." : ctaSub}
+            </div>
+            <div className={styles.coAmt}>{ctaAmount}</div>
+          </div>
+          <div className={styles.coR}>
+            <div className={styles.coLbl}>
+              {isSubmitting ? "Please wait" : ctaLabel}
+            </div>
+            <div className={styles.coArr}>→</div>
+          </div>
         </button>
       </div>
     </div>

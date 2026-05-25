@@ -26,6 +26,7 @@ import LoginForm from "../signup/LogIn/LoginForm";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
 import ProductSection from "../Main/ProductSection/ProductSection";
 import CartSuggestion from "@/component/CartSuggetion/CartSuggestion";
+import CartMobile from "./CartMobile/CartMobile";
 
 const Cart = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -266,6 +267,25 @@ const Cart = () => {
           <ToastContainer position="top-right" autoClose={2000} />
           {cartItems?.length > 0 ? (
             <>
+              <div className={styles.mobileOnly}>
+                <CartMobile
+                  cartItems={cartItems}
+                  bagTotal={bagTotal}
+                  offerData={offerData}
+                  paymentMethod={paymentMethod}
+                  onPaymentMethodChange={setPaymentMethod}
+                  hasCustomizable={hasCustomizable}
+                  isSubmitting={isSubmitting}
+                  onPlaceOrder={handlePlaceOrder}
+                  onQuantityChange={handleQuantityChange}
+                  onRemove={removeFromCart}
+                  onWishlist={addToWishlist}
+                  onBack={() => router.push("/")}
+                  cartCount={cartItems.length}
+                />
+              </div>
+
+              <div className={styles.desktopOnly}>
               <button
                 className={styles.iconBtn}
                 onClick={() => router.push("/")}
@@ -352,6 +372,11 @@ const Cart = () => {
                 </div>
               </div>
 
+              <div className={styles.cartsuggestion}>
+                <CartSuggestion />
+              </div>
+              </div>
+
               <DynamicModal
                 open={isLoginModalVisible}
                 onClose={() => setIsLoginModalVisible(false)}
@@ -369,10 +394,6 @@ const Cart = () => {
               >
                 <AddToBagLoader />
               </DynamicModal>
-
-              <div className={styles.cartsuggestion}>
-                <CartSuggestion />
-              </div>
             </>
           ) : (
             <NoResult
