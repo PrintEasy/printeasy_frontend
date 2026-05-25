@@ -3,6 +3,11 @@ import styles from "./pricelist.module.scss";
 import { getApplicableRewards } from "@/lib/price";
 import { PAYMENT_METHOD, estimatePartialCodAmounts } from "@/lib/payment";
 
+const COD_FEE = 49;
+
+const formatINR = (n) =>
+  `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
+
 const PriceList = ({
   bagTotal,
   grandTotal,
@@ -16,126 +21,250 @@ const PriceList = ({
   const { discount, freeDelivery } = getApplicableRewards(offerData, bagTotal);
 
   const shippingCost = freeDelivery ? 0 : 50;
-  const finalPayable = Number((grandTotal + shippingCost - discount).toFixed(2));
+  const finalPayable = Number(
+    (grandTotal + shippingCost - discount).toFixed(2)
+  );
 
-  const partialEstimate =
+  const partial = estimatePartialCodAmounts(finalPayable);
+  const codBalance = Math.max(0, finalPayable - partial.advanceAmount);
+  const codDoorTotal = codBalance + COD_FEE;
+  const savings = Math.max(0, 50 - shippingCost) + Number(discount || 0);
+
+  const ctaSub =
     paymentMethod === PAYMENT_METHOD.PARTIAL_COD
-      ? estimatePartialCodAmounts(finalPayable)
-      : null;
+      ? "Book now · Pay rest at door"
+      : paymentMethod === PAYMENT_METHOD.COD
+      ? "Pay cash on delivery"
+      : "Pay Online · Total";
 
-  const payButtonLabel = (() => {
-    if (paymentMethod === PAYMENT_METHOD.PARTIAL_COD && partialEstimate) {
-      return `PAY ₹${partialEstimate.advanceAmount} NOW`;
-    }
-    if (paymentMethod === PAYMENT_METHOD.COD) {
-      return "PLACE ORDER (COD)";
-    }
-    return `PAY ₹${finalPayable}`;
-  })();
+  const ctaLabel =
+    paymentMethod === PAYMENT_METHOD.PARTIAL_COD
+      ? "Book Now"
+      : paymentMethod === PAYMENT_METHOD.COD
+      ? "Place Order"
+      : "Proceed to Pay";
+
+  const ctaAmount =
+    paymentMethod === PAYMENT_METHOD.PARTIAL_COD
+      ? formatINR(partial.advanceAmount)
+      : formatINR(finalPayable);
 
   return (
-    <div className={styles.priceDetails}>
-      <div className={styles.priceHeader}>
-        <h2>Order Summary</h2>
+    <div className={styles.rightCol}>
+      {/* ORDER SUMMARY CARD */}
+      <div className={styles.secLabel}>Order Summary</div>
+      <div className={styles.sum}>
+        <div className={styles.sumRows}>
+          <div className={styles.sumRow}>
+            <div className={styles.sl}>Bag Total</div>
+            <div className={styles.sv}>{formatINR(bagTotal)}</div>
+          </div>
+          <div className={styles.sumRow}>
+            <div className={styles.sl}>Shipping</div>
+            <div className={styles.sv}>
+              {freeDelivery ? (
+                <>
+                  <span className={styles.svStrike}>₹50</span>
+                  &nbsp;
+                  <span className={styles.svGreen}>FREE 🎉</span>
+                </>
+              ) : (
+                "₹50"
+              )}
+            </div>
+          </div>
+          {discount > 0 && (
+            <div className={styles.sumRow}>
+              <div className={styles.sl}>Discount</div>
+              <div className={`${styles.sv} ${styles.svGreen}`}>
+                − {formatINR(discount)}
+              </div>
+            </div>
+          )}
+          <div className={styles.sdiv} />
+        </div>
+        <div className={styles.sumTot}>
+          <div className={styles.stL}>Total</div>
+          <div className={styles.stV}>{formatINR(finalPayable)}</div>
+        </div>
+        <div className={styles.sumTax}>
+          Inclusive of all taxes · No hidden charges at door
+        </div>
       </div>
 
-      <div className={styles.priceContent}>
-        <div className={styles.priceRow}>
-          <span>Bag Total</span>
-          <span>₹{bagTotal}</span>
-        </div>
-
-        <div className={styles.priceRow}>
-          <span>Shipping</span>
-          {freeDelivery ? (
-            <span className={styles.freePriceWrapper}>
-              <strong className={styles.discountText}>Free</strong>
-              <span className={styles.strikeValue}>₹50</span>
-            </span>
-          ) : (
-            <span>₹50</span>
-          )}
-        </div>
-
-        {discount > 0 && (
-          <div className={`${styles.priceRow} ${styles.discountRow}`}>
-            <span>Discount Applied</span>
-            <span>- ₹{discount.toFixed(2)}</span>
-          </div>
-        )}
-
-        <div className={styles.finalAmount}>
-          <p>Total</p>
-          <p>₹{finalPayable}</p>
-        </div>
-
-        {paymentMethod === PAYMENT_METHOD.PARTIAL_COD && partialEstimate && (
-          <div className={styles.partialCodBreakdown}>
-            <div className={styles.priceRow}>
-              <span>Pay now ({partialEstimate.advancePercent}%)</span>
-              <strong>₹{partialEstimate.advanceAmount}</strong>
+      {/* PAYMENT METHOD CARD */}
+      <div className={styles.paySec}>
+        <div className={styles.payLbl}>Payment Method</div>
+        <div className={styles.payOpts}>
+          <button
+            type="button"
+            className={`${styles.payOpt} ${
+              paymentMethod === PAYMENT_METHOD.ONLINE
+                ? styles.payOptSel
+                : ""
+            }`}
+            onClick={() => onPaymentMethodChange(PAYMENT_METHOD.ONLINE)}
+          >
+            <div className={styles.pr}>
+              <div className={styles.prDot} />
             </div>
-            <div className={styles.priceRow}>
-              <span>Pay on delivery</span>
-              <strong>₹{partialEstimate.codAmount}</strong>
+            <div className={`${styles.piWrap} ${styles.piWrapOn}`}>⚡</div>
+            <div className={styles.pi}>
+              <div className={styles.piRow}>
+                <div className={styles.piName}>Pay Full Online</div>
+                <div className={styles.piSave}>SAVE ₹{COD_FEE}</div>
+              </div>
+              <div className={styles.piSub}>
+                UPI · Cards · Net Banking · Wallets
+              </div>
             </div>
-            <p className={styles.partialCodNote}>
-              You will pay ₹{partialEstimate.advanceAmount} online via Cashfree.
-              ₹{partialEstimate.codAmount} will be collected in cash on delivery.
-            </p>
-          </div>
-        )}
+            <div className={styles.piPrice}>{formatINR(finalPayable)}</div>
+          </button>
 
-        <div className={styles.paymentMethods}>
-          <p className={styles.paymentMethodsTitle}>Payment method</p>
-
-          <label className={styles.paymentOption}>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value={PAYMENT_METHOD.ONLINE}
-              checked={paymentMethod === PAYMENT_METHOD.ONLINE}
-              onChange={() => onPaymentMethodChange(PAYMENT_METHOD.ONLINE)}
-            />
-            <span>Pay online (full amount)</span>
-          </label>
-
-          <label className={styles.paymentOption}>
-            <input
-              type="radio"
-              name="paymentMethod"
-              value={PAYMENT_METHOD.PARTIAL_COD}
-              checked={paymentMethod === PAYMENT_METHOD.PARTIAL_COD}
-              onChange={() =>
-                onPaymentMethodChange(PAYMENT_METHOD.PARTIAL_COD)
-              }
-            />
-            <span>Pay 25% now, rest on delivery</span>
-          </label>
+          <button
+            type="button"
+            className={`${styles.payOpt} ${
+              paymentMethod === PAYMENT_METHOD.PARTIAL_COD
+                ? styles.payOptSel
+                : ""
+            }`}
+            onClick={() =>
+              onPaymentMethodChange(PAYMENT_METHOD.PARTIAL_COD)
+            }
+          >
+            <div className={styles.pr}>
+              <div className={styles.prDot} />
+            </div>
+            <div className={`${styles.piWrap} ${styles.piWrapCo}`}>🚚</div>
+            <div className={styles.pi}>
+              <div className={styles.piRow}>
+                <div className={styles.piName}>Book Now, Pay Later</div>
+                <div className={styles.piPop}>POPULAR</div>
+              </div>
+              <div className={styles.piSub}>
+                ₹{partial.advanceAmount} now + ₹{codBalance} cash on delivery
+                <span className={styles.piCod}>
+                  + ₹{COD_FEE} COD convenience fee included
+                </span>
+              </div>
+            </div>
+            <div className={styles.piPrice}>
+              {formatINR(partial.advanceAmount)}
+            </div>
+          </button>
 
           {!hasCustomizable && (
-            <label className={styles.paymentOption}>
-              <input
-                type="radio"
-                name="paymentMethod"
-                value={PAYMENT_METHOD.COD}
-                checked={paymentMethod === PAYMENT_METHOD.COD}
-                onChange={() => onPaymentMethodChange(PAYMENT_METHOD.COD)}
-              />
-              <span>Cash on delivery (full amount)</span>
-            </label>
+            <button
+              type="button"
+              className={`${styles.payOpt} ${
+                paymentMethod === PAYMENT_METHOD.COD ? styles.payOptSel : ""
+              }`}
+              onClick={() => onPaymentMethodChange(PAYMENT_METHOD.COD)}
+            >
+              <div className={styles.pr}>
+                <div className={styles.prDot} />
+              </div>
+              <div className={`${styles.piWrap} ${styles.piWrapCo}`}>💵</div>
+              <div className={styles.pi}>
+                <div className={styles.piRow}>
+                  <div className={styles.piName}>Cash on Delivery</div>
+                </div>
+                <div className={styles.piSub}>
+                  Pay the full amount when your order arrives.
+                </div>
+              </div>
+              <div className={styles.piPrice}>{formatINR(finalPayable)}</div>
+            </button>
           )}
         </div>
-
-        <button
-          type="button"
-          className={styles.payBtn}
-          onClick={() => onPlaceOrder(paymentMethod, finalPayable)}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? "PLEASE WAIT..." : payButtonLabel}
-        </button>
       </div>
+
+      {/* COD BREAKDOWN CARD */}
+      {paymentMethod === PAYMENT_METHOD.PARTIAL_COD && (
+        <div className={styles.cod}>
+          <div className={styles.codHd}>
+            <div className={styles.codIcon}>🚚</div>
+            <div>
+              <div className={styles.codTitle}>
+                Book Now, Pay Later — Breakdown
+              </div>
+              <div className={styles.codSub}>
+                What you pay now vs at your door
+              </div>
+            </div>
+          </div>
+          <div className={styles.codRows}>
+            <div className={styles.codRow}>
+              <div className={styles.codRl}>
+                <span className={styles.codDt} />
+                Order total
+              </div>
+              <div className={styles.codRv}>
+                {formatINR(finalPayable)}
+              </div>
+            </div>
+            <div className={styles.codRow}>
+              <div className={styles.codRl}>
+                <span className={styles.codDt} />
+                Pay online now ({partial.advancePercent}%)
+              </div>
+              <div className={`${styles.codRv} ${styles.codRvOr}`}>
+                {formatINR(partial.advanceAmount)}
+              </div>
+            </div>
+            <div className={styles.codDiv} />
+            <div className={styles.codRow}>
+              <div className={styles.codRl}>
+                <span className={styles.codDt} />
+                Balance at door
+              </div>
+              <div className={styles.codRv}>{formatINR(codBalance)}</div>
+            </div>
+            <div className={styles.codRow}>
+              <div className={styles.codRl}>
+                <span className={styles.codDt} />
+                COD convenience fee
+              </div>
+              <div className={`${styles.codRv} ${styles.codRvOr}`}>
+                + ₹{COD_FEE}
+              </div>
+            </div>
+          </div>
+          <div className={styles.codTot}>
+            <div className={styles.codTl}>Cash at door total</div>
+            <div className={styles.codTv}>{formatINR(codDoorTotal)}</div>
+          </div>
+        </div>
+      )}
+
+      {/* SAVINGS PILL + CTA */}
+      {savings > 0 && (
+        <div className={styles.svPill}>
+          <div className={styles.svPillIn}>
+            🎉 You're saving {formatINR(savings)} on this order
+          </div>
+        </div>
+      )}
+
+      <button
+        type="button"
+        className={styles.coBtn}
+        onClick={() => onPlaceOrder(paymentMethod, finalPayable)}
+        disabled={isSubmitting}
+      >
+        <div className={styles.coL}>
+          <div className={styles.coSub}>
+            {isSubmitting ? "Processing..." : ctaSub}
+          </div>
+          <div className={styles.coAmt}>{ctaAmount}</div>
+        </div>
+        <div className={styles.coR}>
+          <div className={styles.coLbl}>
+            {isSubmitting ? "Please wait" : ctaLabel}
+          </div>
+          <div className={styles.coArr}>→</div>
+        </div>
+      </button>
     </div>
   );
 };
