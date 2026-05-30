@@ -22,14 +22,17 @@
 .media {
   position: relative;
   width: 100%;
-  aspect-ratio: 1;
   overflow: hidden;
-  background: linear-gradient(160deg, #1a1815, #2d2520);
+  background: #f0ede8;
+  line-height: 0;
 }
 
 .mediaImg {
+  width: 100%;
+  height: auto;
+  display: block;
   object-fit: cover;
-  padding: 0;
+  object-position: top center;
 }
 
 .badges {

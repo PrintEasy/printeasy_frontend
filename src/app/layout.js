@@ -4,6 +4,7 @@ import Footer from "@/features/footer/Footer";
 import Navbar from "@/features/Main/Navbar/Navbar";
 import { CartProvider } from "@/context/CartContext";
 import WhatsAppFloat from "./WhatsAppFloat/WhatsAppFloat";
+import ScrollToTop from "@/component/ScrollToTop/ScrollToTop";
 import "./globals.css";
 
 // 1. Optimize Fonts using next/font
@@ -68,6 +69,7 @@ export default function RootLayout({ children }) {
         </noscript>
 
         <CartProvider>
+          <ScrollToTop />
           <div className="navbar-wrapper">
             <Navbar />
           </div>

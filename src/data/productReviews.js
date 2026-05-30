@@ -12,7 +12,7 @@ export const productReviews = [
     tags: ["Great Quality", "Fast Delivery", "True to Size"],
     helpfulCount: 32,
     hasPhotos: true,
-    photos: ["👦", "👕"],
+    photos: [0, 1],
   },
   {
     id: "rev_2",
@@ -42,7 +42,7 @@ export const productReviews = [
     tags: ["Vibrant Print", "Soft Fabric"],
     helpfulCount: 11,
     hasPhotos: true,
-    photos: ["🐯", "👧"],
+    photos: [1, 0],
   },
   {
     id: "rev_4",
@@ -72,7 +72,7 @@ export const productReviews = [
     tags: ["Value", "Comfortable"],
     helpfulCount: 9,
     hasPhotos: true,
-    photos: ["👦"],
+    photos: [0],
   },
 ];
 

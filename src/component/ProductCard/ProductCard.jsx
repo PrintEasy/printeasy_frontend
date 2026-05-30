@@ -87,7 +87,9 @@ const ProductCard = ({ item, getwishList }) => {
           src={cardImageSrc}
           alt={item?.name}
           className={styles.mediaImg}
-          fill
+          width={500}
+          height={625}
+          sizes="(max-width: 760px) 50vw, 280px"
         />
 
         <div className={styles.badges}>

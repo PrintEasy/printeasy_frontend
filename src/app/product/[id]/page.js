@@ -12,9 +12,7 @@ import {
   Plus,
   Minus,
   Heart,
-  ChevronLeft,
   ChevronRight,
-  Search,
   Truck,
   Gift,
   Percent,
@@ -31,7 +29,6 @@ import AddToCartSuccessSheet from "@/component/AddToCartSuccessSheet/AddToCartSu
 import ProductDetailsShimmer from "@/component/ProductDetailsShimmer/ProductDetailsShimmer";
 import { useCart } from "@/context/CartContext";
 import bag from "../../../assessts/bag.svg";
-import share from "../../../assessts/share.svg";
 import ShirtEditor from "@/component/shirtEditor/ShirtEditor";
 import {
   createOrder,
@@ -43,7 +40,6 @@ import {
 } from "@/lib/payment";
 import DynamicModal from "@/component/Modal/Modal";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
-import { createSlug } from "@/app/helper";
 import {
   getNextUnlockableOffer,
   getOfferVisualUrl,
@@ -176,6 +172,13 @@ function normalizeProductImages(product) {
   return [];
 }
 
+function productImageAt(productImages, index) {
+  if (!productImages?.length) return null;
+  const i = Number(index);
+  if (!Number.isFinite(i)) return productImages[0];
+  return productImages[((i % productImages.length) + productImages.length) % productImages.length];
+}
+
 const ProductDetails = () => {
   const { id } = useParams();
   const router = useRouter();
@@ -214,6 +217,9 @@ const ProductDetails = () => {
   const [cartProductRowId, setCartProductRowId] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [reviewFilter, setReviewFilter] = useState("ALL");
+  const [heroImageLoading, setHeroImageLoading] = useState(false);
+  const mediaHeroMainRef = useRef(null);
+  const preservedHeroHeightRef = useRef(null);
 
   const refreshCartBagTotal = useCallback(async () => {
     const items = await db.cart.toArray();
@@ -517,6 +523,8 @@ const ProductDetails = () => {
 
   useEffect(() => {
     setEditorReady(false);
+    setHeroImageLoading(false);
+    preservedHeroHeightRef.current = null;
     setSelectedSizeYear("");
     setSizeInfo(null);
     setSelectedImageIndex(0);
@@ -527,6 +535,28 @@ const ProductDetails = () => {
       setIsEditing(false);
     }
   }, [selectedImageIndex]);
+
+  const handleHeroImageReady = useCallback(() => {
+    setEditorReady(true);
+    setHeroImageLoading(false);
+    preservedHeroHeightRef.current = null;
+  }, []);
+
+  const handleSelectProductImage = useCallback(
+    (index) => {
+      if (index === selectedImageIndex) return;
+
+      if (mediaHeroMainRef.current) {
+        const height = mediaHeroMainRef.current.getBoundingClientRect().height;
+        if (height > 0) preservedHeroHeightRef.current = height;
+      }
+
+      setHeroImageLoading(true);
+      setEditorReady(false);
+      setSelectedImageIndex(index);
+    },
+    [selectedImageIndex]
+  );
 
   useEffect(() => {
     if (!product?.configuration?.[0]?.options?.length || !selectedSizeYear) {
@@ -540,32 +570,6 @@ const ProductDetails = () => {
       setSizeInfo(null);
     }
   }, [product, selectedSizeYear, sizeAvailabilityMap]);
-
-  const handleShare = async () => {
-    if (!product?.name) return;
-
-    const slug = createSlug(product?.slug);
-    const shareUrl = `https://onrise.in/product/${slug}`;
-    const title = product.name;
-    const text = title;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title,
-          text,
-          url: shareUrl,
-        });
-      } catch (error) {
-        console.log("Share cancelled", error);
-      }
-    } else {
-      window.open(
-        `https://wa.me/?text=${encodeURIComponent(`${title}\n${shareUrl}`)}`,
-        "_blank"
-      );
-    }
-  };
 
   // --- Effects ---
 
@@ -645,12 +649,17 @@ const ProductDetails = () => {
   }, [reviewFilter]);
 
   const reviewPhotoThumbs = useMemo(() => {
+    const images = normalizeProductImages(product);
+    if (!images.length) return [];
     const thumbs = [];
     for (const r of productReviews) {
-      for (const p of r.photos || []) thumbs.push(p);
+      for (const idx of r.photos || []) {
+        const url = productImageAt(images, idx);
+        if (url) thumbs.push(url);
+      }
     }
     return thumbs.slice(0, 5);
-  }, []);
+  }, [product]);
 
   if (loading) {
     return <ProductDetailsShimmer />;
@@ -772,62 +781,10 @@ const ProductDetails = () => {
         <div className={styles.pageRoot}>
           <ToastContainer position="top-right" autoClose={2000} />
 
-          <div className={styles.productTopNav}>
-            <button
-              type="button"
-              className={styles.tnavBack}
-              onClick={() => router.back()}
-              aria-label="Go back"
-            >
-              <ChevronLeft size={17} strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              className={styles.tnavLogo}
-              onClick={() => router.push("/")}
-            >
-              <span>ON</span>RISE
-            </button>
-            <div className={styles.tnavRight}>
-              <button
-                type="button"
-                className={styles.tnavBtn}
-                onClick={() => router.push("/search")}
-                aria-label="Search"
-              >
-                <Search size={16} strokeWidth={2} />
-              </button>
-              <button
-                type="button"
-                className={styles.tnavBtn}
-                onClick={handleShare}
-                aria-label="Share product"
-              >
-                <Image src={share} alt="" width={16} height={16} />
-              </button>
-              <button
-                type="button"
-                className={styles.tnavBtn}
-                onClick={() => router.push("/cart")}
-                aria-label="Open cart"
-              >
-                <Image src={bag} alt="" width={16} height={16} />
-                {cartCount > 0 && (
-                  <span className={styles.tnavBadge}>{cartCount}</span>
-                )}
-              </button>
-            </div>
-          </div>
-
           <div className={styles.container}>
             <div className={styles.productMediaColumn}>
               <div className={styles.mediaHero}>
                 <div className={styles.mediaHeroTop}>
-                  {discountPercent > 0 && (
-                    <span className={styles.mediaOffBadge}>
-                      {discountPercent}% OFF
-                    </span>
-                  )}
                   <button
                     type="button"
                     className={`${styles.mediaWishBtn} ${
@@ -847,7 +804,32 @@ const ProductDetails = () => {
                   </button>
                 </div>
 
-                <div className={styles.mediaHeroMain}>
+                <div
+                  ref={mediaHeroMainRef}
+                  className={`${styles.mediaHeroMain} ${
+                    heroImageLoading ? styles.mediaHeroMainLoading : ""
+                  }`}
+                  style={
+                    heroImageLoading && preservedHeroHeightRef.current
+                      ? { minHeight: preservedHeroHeightRef.current }
+                      : undefined
+                  }
+                >
+                  {heroImageLoading ? (
+                    <div
+                      className={styles.mediaHeroShimmer}
+                      aria-hidden="true"
+                      aria-busy="true"
+                    >
+                      <div className={styles.mediaHeroShimmerBar} />
+                    </div>
+                  ) : null}
+
+                  <div
+                    className={
+                      heroImageLoading ? styles.mediaHeroContentHidden : ""
+                    }
+                  >
                   {product?.isCustomizable ? (
                     <ShirtEditor
                       product={product}
@@ -864,7 +846,7 @@ const ProductDetails = () => {
                       setSelectedColor={setSelectedColor}
                       setSelectedFont={setSelectedFont}
                       setSelectedSize={setSelectedSize}
-                      onReady={() => setEditorReady(true)}
+                      onReady={handleHeroImageReady}
                     />
                   ) : (
                     <Image
@@ -874,9 +856,10 @@ const ProductDetails = () => {
                       height={600}
                       className={styles.mainImage}
                       priority
-                      onLoad={() => setEditorReady(true)}
+                      onLoad={handleHeroImageReady}
                     />
                   )}
+                  </div>
                 </div>
 
                 {product?.isCustomizable && (
@@ -906,7 +889,7 @@ const ProductDetails = () => {
                             ? styles.mediaDotActive
                             : ""
                         }`}
-                        onClick={() => setSelectedImageIndex(index)}
+                        onClick={() => handleSelectProductImage(index)}
                       />
                     ))}
                   </div>
@@ -931,7 +914,7 @@ const ProductDetails = () => {
                           ? styles.productImageThumbActive
                           : ""
                       }`}
-                      onClick={() => setSelectedImageIndex(index)}
+                      onClick={() => handleSelectProductImage(index)}
                       aria-label={`View product image ${index + 1}`}
                       aria-pressed={selectedImageIndex === index}
                     >
@@ -1169,38 +1152,58 @@ const ProductDetails = () => {
                   </button>
                 </div>
 
-                <div className={styles.photoRow}>
-                  {reviewPhotoThumbs.map((p, idx) => (
-                    <button
-                      key={`${p}-${idx}`}
-                      type="button"
-                      className={styles.phThumb}
-                      aria-label="Review photo"
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  {productReviews.reduce((n, r) => n + (r.photos?.length || 0), 0) >
-                  reviewPhotoThumbs.length ? (
-                    <button
-                      type="button"
-                      className={styles.phThumb}
-                      aria-label="More photos"
-                    >
-                      <span>👧</span>
-                      <span className={styles.phMore}>
-                        +
-                        {Math.max(
-                          0,
-                          productReviews.reduce(
-                            (n, r) => n + (r.photos?.length || 0),
-                            0
-                          ) - reviewPhotoThumbs.length
-                        )}
-                      </span>
-                    </button>
-                  ) : null}
-                </div>
+                {reviewPhotoThumbs.length > 0 ? (
+                  <div className={styles.photoRow}>
+                    {reviewPhotoThumbs.map((src, idx) => (
+                      <button
+                        key={`${src}-${idx}`}
+                        type="button"
+                        className={styles.phThumb}
+                        aria-label="Review photo"
+                      >
+                        <Image
+                          src={src}
+                          alt=""
+                          width={66}
+                          height={66}
+                          className={styles.phThumbImg}
+                        />
+                      </button>
+                    ))}
+                    {productReviews.reduce(
+                      (n, r) => n + (r.photos?.length || 0),
+                      0
+                    ) > reviewPhotoThumbs.length ? (
+                      <button
+                        type="button"
+                        className={styles.phThumb}
+                        aria-label="More photos"
+                      >
+                        {reviewPhotoThumbs[reviewPhotoThumbs.length - 1] ? (
+                          <Image
+                            src={
+                              reviewPhotoThumbs[reviewPhotoThumbs.length - 1]
+                            }
+                            alt=""
+                            width={66}
+                            height={66}
+                            className={styles.phThumbImg}
+                          />
+                        ) : null}
+                        <span className={styles.phMore}>
+                          +
+                          {Math.max(
+                            0,
+                            productReviews.reduce(
+                              (n, r) => n + (r.photos?.length || 0),
+                              0
+                            ) - reviewPhotoThumbs.length
+                          )}
+                        </span>
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <div className={styles.revCards}>
                   {filteredReviews.map((r) => (
@@ -1238,13 +1241,26 @@ const ProductDetails = () => {
                       </div>
                       <div className={styles.rcTitle}>{r.title}</div>
                       <div className={styles.rcText}>{r.text}</div>
-                      {r.photos?.length ? (
+                      {r.photos?.length && productImages.length > 0 ? (
                         <div className={styles.rcImgs}>
-                          {r.photos.slice(0, 2).map((p, idx) => (
-                            <div key={idx} className={styles.rcImg}>
-                              {p}
-                            </div>
-                          ))}
+                          {r.photos.slice(0, 2).map((photoIdx, idx) => {
+                            const src = productImageAt(
+                              productImages,
+                              photoIdx
+                            );
+                            if (!src) return null;
+                            return (
+                              <div key={idx} className={styles.rcImg}>
+                                <Image
+                                  src={src}
+                                  alt=""
+                                  width={52}
+                                  height={52}
+                                  className={styles.rcImgPhoto}
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : null}
                       {r.tags?.length ? (
