@@ -967,10 +967,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 28px;
   cursor: pointer;
   border: 1.5px solid var(--border);
   position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.phThumbImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .phMore {
@@ -1084,10 +1092,15 @@
   height: 52px;
   border-radius: 7px;
   background: var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 22px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.rcImgPhoto {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .rcTags {

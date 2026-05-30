@@ -172,6 +172,13 @@ function normalizeProductImages(product) {
   return [];
 }
 
+function productImageAt(productImages, index) {
+  if (!productImages?.length) return null;
+  const i = Number(index);
+  if (!Number.isFinite(i)) return productImages[0];
+  return productImages[((i % productImages.length) + productImages.length) % productImages.length];
+}
+
 const ProductDetails = () => {
   const { id } = useParams();
   const router = useRouter();
@@ -615,12 +622,17 @@ const ProductDetails = () => {
   }, [reviewFilter]);
 
   const reviewPhotoThumbs = useMemo(() => {
+    const images = normalizeProductImages(product);
+    if (!images.length) return [];
     const thumbs = [];
     for (const r of productReviews) {
-      for (const p of r.photos || []) thumbs.push(p);
+      for (const idx of r.photos || []) {
+        const url = productImageAt(images, idx);
+        if (url) thumbs.push(url);
+      }
     }
     return thumbs.slice(0, 5);
-  }, []);
+  }, [product]);
 
   if (loading) {
     return <ProductDetailsShimmer />;
@@ -1087,38 +1099,58 @@ const ProductDetails = () => {
                   </button>
                 </div>
 
-                <div className={styles.photoRow}>
-                  {reviewPhotoThumbs.map((p, idx) => (
-                    <button
-                      key={`${p}-${idx}`}
-                      type="button"
-                      className={styles.phThumb}
-                      aria-label="Review photo"
-                    >
-                      {p}
-                    </button>
-                  ))}
-                  {productReviews.reduce((n, r) => n + (r.photos?.length || 0), 0) >
-                  reviewPhotoThumbs.length ? (
-                    <button
-                      type="button"
-                      className={styles.phThumb}
-                      aria-label="More photos"
-                    >
-                      <span>👧</span>
-                      <span className={styles.phMore}>
-                        +
-                        {Math.max(
-                          0,
-                          productReviews.reduce(
-                            (n, r) => n + (r.photos?.length || 0),
-                            0
-                          ) - reviewPhotoThumbs.length
-                        )}
-                      </span>
-                    </button>
-                  ) : null}
-                </div>
+                {reviewPhotoThumbs.length > 0 ? (
+                  <div className={styles.photoRow}>
+                    {reviewPhotoThumbs.map((src, idx) => (
+                      <button
+                        key={`${src}-${idx}`}
+                        type="button"
+                        className={styles.phThumb}
+                        aria-label="Review photo"
+                      >
+                        <Image
+                          src={src}
+                          alt=""
+                          width={66}
+                          height={66}
+                          className={styles.phThumbImg}
+                        />
+                      </button>
+                    ))}
+                    {productReviews.reduce(
+                      (n, r) => n + (r.photos?.length || 0),
+                      0
+                    ) > reviewPhotoThumbs.length ? (
+                      <button
+                        type="button"
+                        className={styles.phThumb}
+                        aria-label="More photos"
+                      >
+                        {reviewPhotoThumbs[reviewPhotoThumbs.length - 1] ? (
+                          <Image
+                            src={
+                              reviewPhotoThumbs[reviewPhotoThumbs.length - 1]
+                            }
+                            alt=""
+                            width={66}
+                            height={66}
+                            className={styles.phThumbImg}
+                          />
+                        ) : null}
+                        <span className={styles.phMore}>
+                          +
+                          {Math.max(
+                            0,
+                            productReviews.reduce(
+                              (n, r) => n + (r.photos?.length || 0),
+                              0
+                            ) - reviewPhotoThumbs.length
+                          )}
+                        </span>
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
 
                 <div className={styles.revCards}>
                   {filteredReviews.map((r) => (
@@ -1156,13 +1188,26 @@ const ProductDetails = () => {
                       </div>
                       <div className={styles.rcTitle}>{r.title}</div>
                       <div className={styles.rcText}>{r.text}</div>
-                      {r.photos?.length ? (
+                      {r.photos?.length && productImages.length > 0 ? (
                         <div className={styles.rcImgs}>
-                          {r.photos.slice(0, 2).map((p, idx) => (
-                            <div key={idx} className={styles.rcImg}>
-                              {p}
-                            </div>
-                          ))}
+                          {r.photos.slice(0, 2).map((photoIdx, idx) => {
+                            const src = productImageAt(
+                              productImages,
+                              photoIdx
+                            );
+                            if (!src) return null;
+                            return (
+                              <div key={idx} className={styles.rcImg}>
+                                <Image
+                                  src={src}
+                                  alt=""
+                                  width={52}
+                                  height={52}
+                                  className={styles.rcImgPhoto}
+                                />
+                              </div>
+                            );
+                          })}
                         </div>
                       ) : null}
                       {r.tags?.length ? (
