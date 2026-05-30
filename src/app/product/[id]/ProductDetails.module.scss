@@ -27,71 +27,38 @@
 
 .productTopNav {
   display: none;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 14px;
-  background: var(--ink);
-  position: sticky;
-  top: 0;
-  z-index: 200;
+}
+
+.mediaHero {
+  width: 100%;
+  position: relative;
+  background: linear-gradient(160deg, #1a1815, #2d2520);
+  overflow: hidden;
 
   @media (max-width: 768px) {
-    display: flex;
+    background: #fff;
   }
 }
 
-.tnavBack,
-.tnavBtn {
-  width: 35px;
-  height: 35px;
-  background: rgba(255, 255, 255, 0.1);
-  border: none;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #fff;
-}
-
-.tnavLogo {
-  font-family: "Bebas Neue", "Plus Jakarta Sans", sans-serif;
-  font-size: 19px;
-  letter-spacing: 0.1em;
-  color: #fff;
-  background: none;
-  border: none;
-  cursor: pointer;
-
-  span {
-    color: var(--orange);
-  }
-}
-
-.tnavRight {
-  display: flex;
-  gap: 7px;
-}
-
-.tnavBtn {
-  position: relative;
-}
-
-.tnavBadge {
+.mediaHeroTop {
   position: absolute;
-  top: -5px;
-  right: -5px;
-  width: 17px;
-  height: 17px;
-  background: var(--orange);
-  border-radius: 50%;
-  font-size: 9px;
-  font-weight: 800;
-  color: #fff;
+  top: 13px;
+  left: 0;
+  right: 0;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 2px solid var(--ink);
+  justify-content: flex-end;
+  padding: 0 14px;
+  z-index: 10;
+  pointer-events: none;
+
+  @media (max-width: 768px) {
+    top: max(12px, env(safe-area-inset-top, 12px));
+    padding: 0 12px;
+  }
+
+  > * {
+    pointer-events: auto;
+  }
 }
 
 .container {
@@ -143,6 +110,10 @@
   flex: 1 1 320px;
   min-width: 0;
 
+  @media (max-width: 768px) {
+    max-width: 100%;
+  }
+
   @media (min-width: 769px) {
     flex: 0 1 500px;
   }
@@ -150,39 +121,6 @@
   > section {
     width: 100%;
   }
-}
-
-.mediaHero {
-  width: 100%;
-  position: relative;
-  background: linear-gradient(160deg, #1a1815, #2d2520);
-  overflow: hidden;
-}
-
-.mediaHeroTop {
-  position: absolute;
-  top: 13px;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: space-between;
-  padding: 0 14px;
-  z-index: 10;
-  pointer-events: none;
-
-  > * {
-    pointer-events: auto;
-  }
-}
-
-.mediaOffBadge {
-  background: var(--orange);
-  color: #fff;
-  font-size: 9px;
-  font-weight: 800;
-  padding: 4px 9px;
-  border-radius: 6px;
-  letter-spacing: 0.05em;
 }
 
 .mediaWishBtn {
@@ -215,6 +153,10 @@
     object-fit: contain;
     border-radius: 0;
     max-width: none;
+
+    @media (max-width: 768px) {
+      object-fit: cover;
+    }
   }
 
   > section {
@@ -1221,6 +1163,7 @@
 }
 
 .infoSection {
+  padding: 0 !important;
   .sizeOptions {
     display: flex;
     flex-wrap: wrap;

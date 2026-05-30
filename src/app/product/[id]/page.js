@@ -12,9 +12,7 @@ import {
   Plus,
   Minus,
   Heart,
-  ChevronLeft,
   ChevronRight,
-  Search,
   Truck,
   Gift,
   Percent,
@@ -31,7 +29,6 @@ import AddToCartSuccessSheet from "@/component/AddToCartSuccessSheet/AddToCartSu
 import ProductDetailsShimmer from "@/component/ProductDetailsShimmer/ProductDetailsShimmer";
 import { useCart } from "@/context/CartContext";
 import bag from "../../../assessts/bag.svg";
-import share from "../../../assessts/share.svg";
 import ShirtEditor from "@/component/shirtEditor/ShirtEditor";
 import {
   createOrder,
@@ -43,7 +40,6 @@ import {
 } from "@/lib/payment";
 import DynamicModal from "@/component/Modal/Modal";
 import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
-import { createSlug } from "@/app/helper";
 import {
   getNextUnlockableOffer,
   getOfferVisualUrl,
@@ -541,32 +537,6 @@ const ProductDetails = () => {
     }
   }, [product, selectedSizeYear, sizeAvailabilityMap]);
 
-  const handleShare = async () => {
-    if (!product?.name) return;
-
-    const slug = createSlug(product?.slug);
-    const shareUrl = `https://onrise.in/product/${slug}`;
-    const title = product.name;
-    const text = title;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title,
-          text,
-          url: shareUrl,
-        });
-      } catch (error) {
-        console.log("Share cancelled", error);
-      }
-    } else {
-      window.open(
-        `https://wa.me/?text=${encodeURIComponent(`${title}\n${shareUrl}`)}`,
-        "_blank"
-      );
-    }
-  };
-
   // --- Effects ---
 
   useEffect(() => {
@@ -772,62 +742,10 @@ const ProductDetails = () => {
         <div className={styles.pageRoot}>
           <ToastContainer position="top-right" autoClose={2000} />
 
-          <div className={styles.productTopNav}>
-            <button
-              type="button"
-              className={styles.tnavBack}
-              onClick={() => router.back()}
-              aria-label="Go back"
-            >
-              <ChevronLeft size={17} strokeWidth={2.5} />
-            </button>
-            <button
-              type="button"
-              className={styles.tnavLogo}
-              onClick={() => router.push("/")}
-            >
-              <span>ON</span>RISE
-            </button>
-            <div className={styles.tnavRight}>
-              <button
-                type="button"
-                className={styles.tnavBtn}
-                onClick={() => router.push("/search")}
-                aria-label="Search"
-              >
-                <Search size={16} strokeWidth={2} />
-              </button>
-              <button
-                type="button"
-                className={styles.tnavBtn}
-                onClick={handleShare}
-                aria-label="Share product"
-              >
-                <Image src={share} alt="" width={16} height={16} />
-              </button>
-              <button
-                type="button"
-                className={styles.tnavBtn}
-                onClick={() => router.push("/cart")}
-                aria-label="Open cart"
-              >
-                <Image src={bag} alt="" width={16} height={16} />
-                {cartCount > 0 && (
-                  <span className={styles.tnavBadge}>{cartCount}</span>
-                )}
-              </button>
-            </div>
-          </div>
-
           <div className={styles.container}>
             <div className={styles.productMediaColumn}>
               <div className={styles.mediaHero}>
                 <div className={styles.mediaHeroTop}>
-                  {discountPercent > 0 && (
-                    <span className={styles.mediaOffBadge}>
-                      {discountPercent}% OFF
-                    </span>
-                  )}
                   <button
                     type="button"
                     className={`${styles.mediaWishBtn} ${
