@@ -31,7 +31,7 @@
   button {
     font-family: inherit;
     border: none;
-    background: none;
+    background: #fff;
     color: inherit;
     padding: 0;
     cursor: pointer;
@@ -773,8 +773,10 @@
 
 .ciTags {
   display: flex;
-  gap: 4px;
+  flex-direction: row;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
 }
 
 .ciTag {
@@ -1571,6 +1573,49 @@
 
 .spacer {
   height: 30px;
+}
+
+.shopMoreFloat {
+  position: fixed;
+  bottom: 90px;
+  left: 20px;
+  z-index: 999999999999 !important;
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 5px;
+}
+
+.shopMoreLbl {
+  background: var(--ink);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+  line-height: 1;
+  box-shadow: 0 2px 8px rgba(15, 14, 12, 0.15);
+}
+
+.shopMoreBtn {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(15, 14, 12, 0.12);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  padding: 0;
+
+  &:active {
+    transform: scale(0.96);
+  }
 }
 
 /* ── TOAST ── */

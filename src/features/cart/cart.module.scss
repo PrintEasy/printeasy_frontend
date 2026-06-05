@@ -284,8 +284,10 @@
 
 .ciTags {
   display: flex;
-  gap: 6px;
+  flex-direction: row;
   flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .ciTag {

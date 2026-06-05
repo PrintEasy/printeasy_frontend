@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Heart } from "lucide-react";
 import styles from "./cartMobile.module.scss";
 import FOMO_USERS, { pickUsers, randomUser } from "@/data/fomoUsers";
 import { getApplicableRewards } from "@/lib/price";
 import { PAYMENT_METHOD, estimatePartialCodAmounts } from "@/lib/payment";
+import { getCartItemAttributeTags } from "@/lib/cartItemMeta";
 
 const COD_FEE = 49;
 
@@ -31,6 +33,7 @@ const CartMobile = ({
   onBack,
   cartCount,
 }) => {
+  const router = useRouter();
   const { discount, freeDelivery } = useMemo(
     () => getApplicableRewards(offerData, bagTotal),
     [offerData, bagTotal]
@@ -413,8 +416,8 @@ const CartMobile = ({
       </div>
 
       {cartItems.map((item) => {
-        const sizeLabel = item?.options?.[0]?.value || item?.options?.value;
         const presetText = item?.presetText;
+        const attributeTags = getCartItemAttributeTags(item);
         const basePrice = Number(item?.basePrice) || 0;
         const discPrice = Number(item?.discountPrice) || basePrice;
         const save = Math.max(0, basePrice - discPrice) * (item.quantity || 1);
@@ -442,14 +445,15 @@ const CartMobile = ({
                     </span>
                   </div>
                 )}
-                <div className={styles.ciTags}>
-                  {sizeLabel && (
-                    <span className={styles.ciTag}>Size: {sizeLabel}</span>
-                  )}
-                  {item.isCustomizable && (
-                    <span className={styles.ciTag}>Custom Print</span>
-                  )}
-                </div>
+                {attributeTags.length > 0 ? (
+                  <div className={styles.ciTags}>
+                    {attributeTags.map((tag) => (
+                      <span key={tag.key} className={styles.ciTag}>
+                        {tag.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </div>
               <div className={styles.ciR}>
                 {basePrice > discPrice && (
@@ -615,7 +619,7 @@ const CartMobile = ({
               <div className={styles.piSub}>
                 ₹{partial.advanceAmount} now + ₹{codBalance} cash on delivery
                 <span className={styles.piCod}>
-                  + ₹{COD_FEE} COD convenience fee included
+                  + ₹{COD_FEE} convenience fee included
                 </span>
               </div>
             </div>
@@ -692,7 +696,7 @@ const CartMobile = ({
             <div className={styles.codRow}>
               <div className={styles.codRl}>
                 <span className={styles.codDt} />
-                COD convenience fee
+                convenience fee
               </div>
               <div className={`${styles.codRv} ${styles.codRvOr}`}>
                 + ₹{COD_FEE}
@@ -794,6 +798,44 @@ const CartMobile = ({
       </a>
 
       <div className={styles.spacer} />
+
+      <div className={styles.shopMoreFloat}>
+        <span className={styles.shopMoreLbl}>Shop More</span>
+        <button
+          type="button"
+          className={styles.shopMoreBtn}
+          onClick={() => router.push("/")}
+          aria-label="Shop more products"
+        >
+          <svg
+            width="30"
+            height="30"
+            viewBox="0 0 32 32"
+            fill="none"
+            aria-hidden
+          >
+            <path
+              d="M8 10h16l-1.5 14H9.5L8 10z"
+              fill="#5B9BD5"
+              stroke="#4A8BC4"
+              strokeWidth="0.5"
+            />
+            <path
+              d="M12 10V8a4 4 0 0 1 8 0v2"
+              stroke="#4A8BC4"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <rect x="18" y="16" width="10" height="12" rx="2" fill="#FF4500" />
+            <path
+              d="M21 16v-2a2 2 0 0 1 4 0v2"
+              stroke="#E63E00"
+              strokeWidth="1"
+              fill="none"
+            />
+          </svg>
+        </button>
+      </div>
 
       {/* STICKY FOOTER */}
       <div className={styles.sticky}>
