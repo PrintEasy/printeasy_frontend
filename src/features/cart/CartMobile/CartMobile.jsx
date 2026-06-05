@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronLeft, Heart } from "lucide-react";
 import styles from "./cartMobile.module.scss";
 import FOMO_USERS, { pickUsers, randomUser } from "@/data/fomoUsers";
@@ -31,6 +32,7 @@ const CartMobile = ({
   onBack,
   cartCount,
 }) => {
+  const router = useRouter();
   const { discount, freeDelivery } = useMemo(
     () => getApplicableRewards(offerData, bagTotal),
     [offerData, bagTotal]
@@ -443,11 +445,11 @@ const CartMobile = ({
                   </div>
                 )}
                 <div className={styles.ciTags}>
-                  {sizeLabel && (
-                    <span className={styles.ciTag}>Size: {sizeLabel}</span>
-                  )}
                   {item.isCustomizable && (
                     <span className={styles.ciTag}>Custom Print</span>
+                  )}
+                  {sizeLabel && (
+                    <span className={styles.ciTag}>Size: {sizeLabel}</span>
                   )}
                 </div>
               </div>
@@ -794,6 +796,44 @@ const CartMobile = ({
       </a>
 
       <div className={styles.spacer} />
+
+      <div className={styles.shopMoreFloat}>
+        <span className={styles.shopMoreLbl}>Shop More</span>
+        <button
+          type="button"
+          className={styles.shopMoreBtn}
+          onClick={() => router.push("/")}
+          aria-label="Shop more products"
+        >
+          <svg
+            width="30"
+            height="30"
+            viewBox="0 0 32 32"
+            fill="none"
+            aria-hidden
+          >
+            <path
+              d="M8 10h16l-1.5 14H9.5L8 10z"
+              fill="#5B9BD5"
+              stroke="#4A8BC4"
+              strokeWidth="0.5"
+            />
+            <path
+              d="M12 10V8a4 4 0 0 1 8 0v2"
+              stroke="#4A8BC4"
+              strokeWidth="1.5"
+              fill="none"
+            />
+            <rect x="18" y="16" width="10" height="12" rx="2" fill="#FF4500" />
+            <path
+              d="M21 16v-2a2 2 0 0 1 4 0v2"
+              stroke="#E63E00"
+              strokeWidth="1"
+              fill="none"
+            />
+          </svg>
+        </button>
+      </div>
 
       {/* STICKY FOOTER */}
       <div className={styles.sticky}>

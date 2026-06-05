@@ -357,14 +357,14 @@ const Cart = () => {
                                 </div>
                               )}
                             <div className={styles.ciTags}>
-                              {sizeLabel && (
-                                <span className={styles.ciTag}>
-                                  Size: {sizeLabel}
-                                </span>
-                              )}
                               {item.isCustomizable && (
                                 <span className={styles.ciTag}>
                                   Custom Print
+                                </span>
+                              )}
+                              {sizeLabel && (
+                                <span className={styles.ciTag}>
+                                  Size: {sizeLabel}
                                 </span>
                               )}
                             </div>
