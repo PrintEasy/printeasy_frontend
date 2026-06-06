@@ -159,11 +159,11 @@ const Cart = () => {
       return;
     }
 
-    if (selectedMethod === PAYMENT_METHOD.COD && !defaultAddress) {
-      toast.warning("Please add a delivery address for cash on delivery.");
-      router.push("/address");
-      return;
-    }
+    // if (selectedMethod === PAYMENT_METHOD.COD && !defaultAddress) {
+    //   toast.warning("Please add a delivery address for cash on delivery.");
+    //   router.push("/address");
+    //   return;
+    // }
 
     try {
       setIsSubmitting(true);
