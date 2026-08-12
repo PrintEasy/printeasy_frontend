@@ -11,7 +11,6 @@ const formatINR = (n) =>
 
 const PriceList = ({
   bagTotal,
-  grandTotal,
   couponDiscount = 0,
   couponPercent,
   appliedCouponCode,
@@ -30,7 +29,7 @@ const PriceList = ({
 
   const shippingCost = freeDelivery ? 0 : 50;
   const finalPayable = Number(
-    (grandTotal + shippingCost - discount).toFixed(2)
+    (bagTotal + shippingCost - couponDiscount - discount).toFixed(2)
   );
 
   const partial = estimatePartialCodAmounts(finalPayable);
