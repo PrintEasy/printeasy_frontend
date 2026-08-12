@@ -1,93 +1,410 @@
-@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=IBM+Plex+Mono:wght@600;700&display=swap");
 
-.wrapper {
-  width: 100%;
-  height: 320px;
-  background-color: #0F172A;
+@keyframes drift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes pulseDot {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(74, 222, 128, 0);
+  }
+}
+
+@keyframes sparkle {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.4) rotate(0deg);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1) rotate(90deg);
+  }
+}
+
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.92);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes marqueeRev {
+  0% {
+    transform: translateX(-50%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes wobble {
+  0%,
+  100% {
+    transform: rotate(-1.2deg);
+  }
+  50% {
+    transform: rotate(1.2deg);
+  }
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+  }
+  100% {
+    transform: translateX(220%) skewX(-18deg);
+  }
+}
+
+.feed {
+  --ink: #1c1b33;
+  background:
+    radial-gradient(circle at 88% -10%, rgba(255, 90, 78, 0.32), transparent 50%),
+    radial-gradient(circle at 6% 108%, rgba(18, 149, 138, 0.4), transparent 55%),
+    radial-gradient(circle at 50% 40%, rgba(124, 108, 246, 0.22), transparent 60%),
+    linear-gradient(120deg, #17162c, #1c1b33, #17162c);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 220% 220%;
+  animation: drift 9s ease-in-out infinite;
+  border-radius: 18px;
+  margin: 22px 6px 0;
+  padding: 15px 15px 16px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sparkle {
+  position: absolute;
+  font-size: 12px;
+  opacity: 0;
+  pointer-events: none;
+  color: #ffd666;
+  animation: sparkle 3.2s ease-in-out infinite;
+}
+
+.s1 {
+  top: 8px;
+  left: 52%;
+  animation-delay: 0.2s;
+}
+
+.s2 {
+  top: 52px;
+  left: 14%;
+  animation-delay: 1.4s;
+  font-size: 9px;
+}
+
+.s3 {
+  top: 18px;
+  right: 12%;
+  animation-delay: 2.1s;
+  font-size: 10px;
+}
+
+.head {
   display: flex;
   align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  justify-content: space-between;
+  margin-bottom: 9px;
+  position: relative;
 }
 
-.tickerContainer {
-  width: 100%;
+.headLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  span:last-child {
+    color: #fff;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: pulseDot 1.8s ease-out infinite;
+}
+
+.title {
+  color: #fff;
+  font-family: "Baloo 2", sans-serif;
+  font-size: 16.5px;
+  font-weight: 700;
+  margin: 2px 0 0;
+  position: relative;
+}
+
+.sub {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 11.5px;
+  margin-top: 3px;
+  font-weight: 500;
+}
+
+.trackWrap {
+  position: relative;
+  overflow: hidden;
+  margin: 12px -15px 0;
+  padding: 2px 0;
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+
+  & + & {
+    margin-top: 8px;
+  }
+}
+
+.track {
+  display: flex;
+  gap: 8px;
+  width: max-content;
+  padding: 0 15px;
+
+  &:hover {
+    animation-play-state: paused;
+  }
+}
+
+.row1 {
+  animation: marquee 30s linear infinite;
+}
+
+.row2 {
+  animation: marqueeRev 24s linear infinite;
+}
+
+.patch {
+  flex-shrink: 0;
+  width: 120px;
+  border-radius: 12px;
+  padding: 8px 10px 9px;
   display: flex;
   flex-direction: column;
-  gap: 30px;
-  transform: rotate(-3deg);
-}
-
-.tickerWrapper {
-  width: 100%;
+  gap: 1px;
+  border: 1.5px dashed rgba(28, 27, 51, 0.22);
+  position: relative;
   overflow: hidden;
+  animation: popIn 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  transition: transform 0.25s ease;
+
+  &:nth-child(1) {
+    animation-delay: 0.03s;
+  }
+  &:nth-child(2) {
+    animation-delay: 0.08s;
+  }
+  &:nth-child(3) {
+    animation-delay: 0.13s;
+  }
+  &:nth-child(4) {
+    animation-delay: 0.18s;
+  }
+  &:nth-child(5) {
+    animation-delay: 0.23s;
+  }
+  &:nth-child(6) {
+    animation-delay: 0.28s;
+  }
+
+  &:hover {
+    animation: wobble 0.5s ease-in-out;
+    transform: translateY(-2px) scale(1.03);
+    z-index: 2;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 36%;
+    height: 100%;
+    background: linear-gradient(
+      120deg,
+      transparent,
+      rgba(255, 255, 255, 0.6),
+      transparent
+    );
+    animation: shine 4.5s ease-in-out infinite;
+  }
+}
+
+.c1 {
+  background: #ffd3dc;
+}
+.c2 {
+  background: #ffe9a8;
+}
+.c3 {
+  background: #c3f3e4;
+}
+.c4 {
+  background: #dad4ff;
+}
+.c5 {
+  background: #ffd3ae;
+}
+.c6 {
+  background: #bee8ff;
+}
+.c7 {
+  background: #ffc2c2;
+}
+.c8 {
+  background: #cff2be;
+}
+.c9 {
+  background: #ffe0f3;
+}
+.c10 {
+  background: #c6e0ff;
+}
+
+.emoji {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.name {
+  font-family: "Baloo 2", sans-serif;
+  font-weight: 800;
+  font-size: 12.5px;
+  color: var(--ink);
+  position: relative;
+  z-index: 1;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.tickerTrack {
-  display: inline-flex;
-  gap: 20px;
-  will-change: transform;
+.quote {
+  font-size: 9.5px;
+  font-style: italic;
+  font-weight: 600;
+  color: rgba(28, 27, 51, 0.72);
+  line-height: 1.25;
+  position: relative;
+  z-index: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.tickerItem {
-  font-family: "Bebas Neue", sans-serif;
-  font-size: 30px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #000;
-  padding: 10px 40px;
-  border-radius: 15px;
-  line-height: 0.9;
-  cursor: pointer;
-  user-select: none;
-  transition: background-color 0.3s ease;
+.cta {
+  display: block;
+  margin-top: 13px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(90deg, #ffc839, #ffdd7a, #ffc839);
+  background-size: 200% 100%;
+  animation: drift 3.5s ease-in-out infinite;
+  border: none;
+  border-radius: 100px;
+  padding: 12px;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 12.5px;
+  color: #1c1b33;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: 0 6px 16px -6px rgba(255, 200, 57, 0.7);
 }
 
-/* Animations */
-.left {
-  animation: scrollLeft 400s linear infinite;
-}
-
-.right {
-  animation: scrollRight 400s linear infinite;
-}
-
-@keyframes scrollLeft {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-50%);
-  }
-}
-
-@keyframes scrollRight {
-  from {
-    transform: translateX(-50%);
-  }
-  to {
-    transform: translateX(0);
-  }
-}
-
-/* Mobile */
-@media (max-width: 768px) {
-  .wrapper {
-    height: 220px; /* ⬅ reduce overall height */
+@media (min-width: 769px) {
+  .feed {
+    width: 100%;
+    max-width: none;
+    margin: 32px 0 0;
+    border-radius: 0;
+    padding: 22px 22px 20px;
   }
 
-  .tickerContainer {
-    gap: 14px;          /* tighter vertical spacing */
-    transform: rotate(-4deg);
+  .title {
+    font-size: 22px;
   }
 
-  .tickerItem {
-    font-size: 20px;    /* ⬅ smaller text */
-    padding: 6px 20px;  /* ⬅ smaller pill */
-    border-radius: 8px;
-    letter-spacing: 1px;
-    line-height: 1;
+  .sub {
+    font-size: 13px;
+  }
+
+  .trackWrap {
+    margin: 16px -22px 0;
+  }
+
+  .patch {
+    width: 148px;
+    padding: 10px 12px 11px;
+  }
+
+  .name {
+    font-size: 14px;
+  }
+
+  .quote {
+    font-size: 11px;
+  }
+
+  .cta {
+    font-size: 14px;
+    padding: 14px;
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .feed,
+  .sparkle,
+  .liveDot,
+  .track,
+  .patch,
+  .patch::after,
+  .cta {
+    animation: none;
+  }
+}

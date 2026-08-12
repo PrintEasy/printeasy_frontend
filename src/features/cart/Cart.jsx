@@ -27,6 +27,12 @@ import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
 import CartSuggestion from "@/component/CartSuggetion/CartSuggestion";
 import CartMobile from "./CartMobile/CartMobile";
 import { getCartItemAttributeTags } from "@/lib/cartItemMeta";
+import {
+  fetchFranchiseByCode,
+  getFranchiseCode,
+  getFranchiseCouponDiscount,
+  getFranchiseMinOrder,
+} from "@/lib/franchiseCoupon";
 
 const Cart = () => {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -41,6 +47,9 @@ const Cart = () => {
   const [showCartUI, setShowCartUI] = useState(true);
   const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHOD.ONLINE);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
 
   console.log(cartItems,"shssjsuuyyy")
 
@@ -101,8 +110,87 @@ const Cart = () => {
   };
 
   const bagTotal = calculateTotal();
-  const couponDiscount = 0;
-  const grandTotal = bagTotal - couponDiscount;
+  const couponDiscount = appliedCoupon
+    ? getFranchiseCouponDiscount(appliedCoupon.franchise, bagTotal)
+    : 0;
+  const grandTotal = Math.max(0, bagTotal - couponDiscount);
+
+  const handleApplyCoupon = async (rawCode) => {
+    const code = String(rawCode || "").trim();
+    if (!code) {
+      setCouponError("Enter a coupon code");
+      return;
+    }
+    if (!accessToken) {
+      toast.warning("Please login to apply a coupon");
+      setIsLoginModalVisible(true);
+      return;
+    }
+
+    setCouponLoading(true);
+    setCouponError("");
+    try {
+      const franchise = await fetchFranchiseByCode(api, code);
+      if (!franchise) {
+        setAppliedCoupon(null);
+        setCouponError("Invalid coupon code");
+        return;
+      }
+
+      const minOrder = getFranchiseMinOrder(franchise);
+      if (!Number.isNaN(minOrder) && minOrder > 0 && bagTotal < minOrder) {
+        setAppliedCoupon(null);
+        setCouponError(
+          `Add ₹${Math.ceil(minOrder - bagTotal)} more to use this coupon`
+        );
+        return;
+      }
+
+      const discount = getFranchiseCouponDiscount(franchise, bagTotal);
+      if (discount <= 0) {
+        setAppliedCoupon(null);
+        setCouponError("This coupon has no discount for your bag");
+        return;
+      }
+
+      setAppliedCoupon({
+        code: (getFranchiseCode(franchise) || code).toUpperCase(),
+        franchise,
+      });
+      toast.success("Coupon applied");
+    } catch (error) {
+      console.error(error);
+      const status = error?.response?.status;
+      if (status === 401 || status === 403) {
+        toast.warning("Please login to apply a coupon");
+        setIsLoginModalVisible(true);
+        setCouponError("Login required to apply this coupon");
+      } else {
+        setCouponError(
+          error?.response?.data?.message || "Could not apply coupon"
+        );
+      }
+      setAppliedCoupon(null);
+    } finally {
+      setCouponLoading(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponError("");
+  };
+
+  useEffect(() => {
+    if (!appliedCoupon?.franchise) return;
+    const minOrder = getFranchiseMinOrder(appliedCoupon.franchise);
+    if (!Number.isNaN(minOrder) && minOrder > 0 && bagTotal < minOrder) {
+      setAppliedCoupon(null);
+      setCouponError(
+        `Coupon removed — add ₹${Math.ceil(minOrder - bagTotal)} more to use it`
+      );
+    }
+  }, [bagTotal, appliedCoupon]);
 
   const removeFromCart = async (productId) => {
     try {
@@ -194,6 +282,7 @@ const Cart = () => {
         totalAmount: finalPayable,
         items: finalItems,
         user,
+        couponCode: appliedCoupon?.code,
       });
 
       const cashfreeError = getCashfreeSessionError(orderData);
@@ -271,6 +360,12 @@ const Cart = () => {
                 <CartMobile
                   cartItems={cartItems}
                   bagTotal={bagTotal}
+                  couponDiscount={couponDiscount}
+                  appliedCouponCode={appliedCoupon?.code}
+                  couponError={couponError}
+                  couponLoading={couponLoading}
+                  onApplyCoupon={handleApplyCoupon}
+                  onRemoveCoupon={handleRemoveCoupon}
                   offerData={offerData}
                   paymentMethod={paymentMethod}
                   onPaymentMethodChange={setPaymentMethod}
@@ -456,6 +551,12 @@ const Cart = () => {
                   <PriceList
                     bagTotal={bagTotal}
                     grandTotal={grandTotal}
+                    couponDiscount={couponDiscount}
+                    appliedCouponCode={appliedCoupon?.code}
+                    couponError={couponError}
+                    couponLoading={couponLoading}
+                    onApplyCoupon={handleApplyCoupon}
+                    onRemoveCoupon={handleRemoveCoupon}
                     paymentMethod={paymentMethod}
                     onPaymentMethodChange={setPaymentMethod}
                     onPlaceOrder={handlePlaceOrder}

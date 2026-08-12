@@ -1,0 +1,134 @@
+.box {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 2px 12px rgba(15, 14, 12, 0.07);
+  padding: 14px 16px 16px;
+  border: 1px dashed #ffd4c2;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f0e0c;
+  margin-bottom: 12px;
+
+  svg {
+    color: #ff4500;
+  }
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  border: 1px solid #e8e3dc;
+  background: #f0ede8;
+  border-radius: 12px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0f0e0c;
+  outline: none;
+
+  &::placeholder {
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 500;
+    color: #9a9490;
+  }
+
+  &:focus {
+    border-color: #ff4500;
+    background: #fff;
+  }
+}
+
+.apply {
+  height: 44px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: #ff4500;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  flex-shrink: 0;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.error {
+  margin-top: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #e11d48;
+}
+
+.applied {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.appliedIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e6f9f2;
+  color: #00a86b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.appliedBody {
+  flex: 1;
+  min-width: 0;
+}
+
+.appliedCode {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #0f0e0c;
+}
+
+.appliedSave {
+  font-size: 12px;
+  font-weight: 600;
+  color: #00a86b;
+  margin-top: 1px;
+}
+
+.remove {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  color: #9a9490;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 0 6px 8px;
+
+  &:hover {
+    color: #e11d48;
+  }
+}
