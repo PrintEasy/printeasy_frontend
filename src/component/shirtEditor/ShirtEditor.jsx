@@ -11,7 +11,6 @@ import styles from "./shirtEditor.module.scss";
 import Image from "next/image";
 import { COLORS, SIZES } from "@/constants";
 import api from "@/axiosInstance/axiosInstance";
-import loader from "../../assessts/loader/click.gif";
 import fontIcon from "../../assessts/font.svg";
 import letterIcon from "../../assessts/letter1.svg";
 import familyIcon from "../../assessts/family.svg";
@@ -51,7 +50,6 @@ const ShirtEditor = forwardRef(
     const loadedFontsRef = useRef(new Set());
     const canvasRef = useRef(null);
     const inputRef = useRef(null);
-    const viewRef = useRef(null);
     const editorRef = useRef(null);
 
     const displayImageSrc = shirtImageSrc || product?.canvasImage;
@@ -128,6 +126,9 @@ const ShirtEditor = forwardRef(
     };
 
     useImperativeHandle(ref, () => ({
+      focusText: () => {
+        openKeyboard();
+      },
       captureImage: async () => {
         try {
           const canvas = canvasRef.current;
@@ -247,17 +248,30 @@ const ShirtEditor = forwardRef(
       loadFonts();
     }, [fonts]);
 
-    const startTextEditing = () => {
-      if (!hasUserInteracted) {
-        setHasUserInteracted(true);
-      }
+    const ignoreBlurRef = useRef(false);
 
-      if (inputRef.current) {
-        const len = inputRef.current.value.length;
-        inputRef.current.focus();
-        inputRef.current.setSelectionRange(len, len);
+    const focusInput = () => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus({ preventScroll: true });
+      const len = el.value.length;
+      try {
+        el.setSelectionRange(len, len);
+      } catch {
+        /* ignore */
       }
+    };
+
+    const openKeyboard = (e) => {
+      e?.preventDefault?.();
+      ignoreBlurRef.current = true;
+      setHasUserInteracted(true);
       setIsEditing(true);
+      focusInput();
+      requestAnimationFrame(() => {
+        focusInput();
+        ignoreBlurRef.current = false;
+      });
 
       if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
         setTimeout(() => {
@@ -269,10 +283,19 @@ const ShirtEditor = forwardRef(
       }
     };
 
+    const keepTextareaFocus = (e) => {
+      e.preventDefault();
+    };
+
     const handleBlur = (e) => {
-      if (e.relatedTarget && editorRef.current?.contains(e.relatedTarget))
+      if (e.relatedTarget && editorRef.current?.contains(e.relatedTarget)) {
         return;
-      setIsEditing(false);
+      }
+      setTimeout(() => {
+        if (ignoreBlurRef.current) return;
+        if (editorRef.current?.contains(document.activeElement)) return;
+        setIsEditing(false);
+      }, 50);
     };
 
     const onFontSelect = (font) => {
@@ -372,48 +395,34 @@ const ShirtEditor = forwardRef(
 
           {product && imageLoaded && !hideTextOverlay && (
             <>
-              {isEditing ? (
-                <textarea
-                  ref={inputRef}
-                  className={`${styles.presetText} ${styles.editInput}`}
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  style={dynamicStyles}
-                  onBlur={handleBlur}
-                  inputMode="text"
-                  autoComplete="off"
-                  autoCorrect="off"
-                  autoCapitalize="off"
-                  spellCheck="false"
-                  data-gramm="false"
-                  data-gramm_editor="false"
-                  data-enable-grammarly="false"
+              <textarea
+                ref={inputRef}
+                className={`${styles.presetText} ${styles.editInput}`}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onFocus={() => {
+                  setHasUserInteracted(true);
+                  setIsEditing(true);
+                }}
+                onBlur={handleBlur}
+                style={dynamicStyles}
+                placeholder="Your Text Here"
+                inputMode="text"
+                autoComplete="off"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
+                data-gramm="false"
+                data-gramm_editor="false"
+                data-enable-grammarly="false"
+              />
+              {!hasUserInteracted && (
+                <DotLottieReact
+                  src="https://lottie.host/62e86d1a-c1c4-4325-836b-2bf856f7c628/VjcOjevAOa.lottie"
+                  loop
+                  autoplay
+                  className={styles.overlayLoader}
                 />
-              ) : (
-                <div
-                  ref={viewRef}
-                  className={styles.presetText}
-                  onClick={startTextEditing}
-                  style={{ ...dynamicStyles, cursor: "text" }}
-                >
-                  {text.trim() || "Your Text Here"}
-
-                  {!hasUserInteracted && (
-                    // <Image
-                    //   src={loader.src}
-                    //   alt="tap to type"
-                    //   width={120}
-                    //   height={120}
-                    //   className={styles.overlayLoader}
-                    // />
-                    <DotLottieReact
-                      src="https://lottie.host/62e86d1a-c1c4-4325-836b-2bf856f7c628/VjcOjevAOa.lottie"
-                      loop
-                      autoplay
-                      className={styles.overlayLoader}
-                    />
-                  )}
-                </div>
               )}
             </>
           )}
@@ -425,6 +434,7 @@ const ShirtEditor = forwardRef(
               style={{ outline: "none" }}
             >
               <button
+                type="button"
                 onClick={() => setActiveTab("size")}
                 className={`${styles.toolButton} ${activeTab === "size" ? styles.activeTool : ""}`}
               >
@@ -432,6 +442,7 @@ const ShirtEditor = forwardRef(
                 <span>Font Size</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab("color")}
                 className={`${styles.toolButton} ${activeTab === "color" ? styles.activeTool : ""}`}
               >
@@ -439,19 +450,32 @@ const ShirtEditor = forwardRef(
                 <span>Colour</span>
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab("font")}
                 className={`${styles.toolButton} ${activeTab === "font" ? styles.activeTool : ""}`}
               >
                 <Image src={familyIcon} alt="font" />
                 <span>Fonts</span>
               </button>
-              <div className={styles.toolButton} onClick={startTextEditing}>
+              <button
+                type="button"
+                className={styles.toolButton}
+                onMouseDown={keepTextareaFocus}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  openKeyboard(e);
+                }}
+              >
                 <Image src={keyboardIcon} alt="edit" />
                 <span>Edit</span>
-              </div>
+              </button>
               <button
+                type="button"
                 className={styles.closeToolbarBtn}
-                onClick={() => setIsEditing(false)}
+                onClick={() => {
+                  setIsEditing(false);
+                  inputRef.current?.blur();
+                }}
               >
                 ×
               </button>

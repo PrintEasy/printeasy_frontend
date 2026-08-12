@@ -76,25 +76,28 @@ export function getFranchiseMinOrder(franchise) {
   ]);
 }
 
-/** Discount rupees for the current bag total. */
-export function getFranchiseCouponDiscount(franchise, bagTotal) {
-  const bag = Number(bagTotal) || 0;
-  if (!franchise || bag <= 0) return 0;
-
-  const pct = pickNumber(franchise, [
+export function getFranchiseDiscountPercent(franchise) {
+  return pickNumber(franchise, [
     "discountPercentage",
     "discountPercent",
     "discount_percentage",
     "percentage",
     "percent",
+    "discount",
     "commissionPercentage",
     "commission_percentage",
   ]);
+}
+
+/** Discount rupees for the current bag total. `discount: 15` means 15% off. */
+export function getFranchiseCouponDiscount(franchise, bagTotal) {
+  const bag = Number(bagTotal) || 0;
+  if (!franchise || bag <= 0) return 0;
+
+  const pct = getFranchiseDiscountPercent(franchise);
   const amt = pickNumber(franchise, [
     "discountAmount",
     "discount_amount",
-    "discount",
-    "amount",
     "flatDiscount",
     "flat_discount",
   ]);

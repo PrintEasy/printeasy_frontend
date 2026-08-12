@@ -10,6 +10,7 @@ const formatINR = (n) =>
 export default function CouponBox({
   appliedCode,
   discount = 0,
+  percent,
   error,
   loading,
   onApply,
@@ -33,7 +34,9 @@ export default function CouponBox({
             <div className={styles.appliedCode}>{appliedCode}</div>
             <div className={styles.appliedSave}>
               {discount > 0
-                ? `You saved ${formatINR(discount)}`
+                ? !Number.isNaN(Number(percent)) && Number(percent) > 0
+                  ? `${percent}% off · You saved ${formatINR(discount)}`
+                  : `You saved ${formatINR(discount)}`
                 : "Coupon applied"}
             </div>
           </div>

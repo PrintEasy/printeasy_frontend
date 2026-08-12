@@ -13,6 +13,7 @@ const PriceList = ({
   bagTotal,
   grandTotal,
   couponDiscount = 0,
+  couponPercent,
   appliedCouponCode,
   couponError,
   couponLoading,
@@ -64,6 +65,7 @@ const PriceList = ({
       <CouponBox
         appliedCode={appliedCouponCode}
         discount={couponDiscount}
+        percent={couponPercent}
         error={couponError}
         loading={couponLoading}
         onApply={onApplyCoupon}
@@ -95,7 +97,11 @@ const PriceList = ({
           {couponDiscount > 0 && (
             <div className={styles.sumRow}>
               <div className={styles.sl}>
-                Coupon{appliedCouponCode ? ` (${appliedCouponCode})` : ""}
+                Coupon
+                {appliedCouponCode ? ` (${appliedCouponCode})` : ""}
+                {!Number.isNaN(Number(couponPercent)) && couponPercent > 0
+                  ? ` · ${couponPercent}% off`
+                  : ""}
               </div>
               <div className={`${styles.sv} ${styles.svGreen}`}>
                 − {formatINR(couponDiscount)}

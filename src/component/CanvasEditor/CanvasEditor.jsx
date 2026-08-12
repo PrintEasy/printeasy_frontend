@@ -853,10 +853,18 @@ useEffect(() => {
             <span className={styles.toolLabel}>Fonts</span>
           </button>
 
-          <div className={styles.toolButton} onClick={startTextEditing}>
+          <button
+            type="button"
+            className={styles.toolButton}
+            onMouseDown={(e) => e.preventDefault()}
+            onPointerDown={(e) => {
+              e.preventDefault();
+              startTextEditing();
+            }}
+          >
             <Image src={keyboard} alt="font" />
             <span className={styles.toolLabel}>Edit</span>
-          </div>
+          </button>
 
           <button
             onClick={() => setIsEditing(false)}
