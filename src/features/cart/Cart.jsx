@@ -27,6 +27,7 @@ import AddToBagLoader from "@/component/AddToBagLoader/AddToBagLoader";
 import CartSuggestion from "@/component/CartSuggetion/CartSuggestion";
 import CartMobile from "./CartMobile/CartMobile";
 import { getCartItemAttributeTags } from "@/lib/cartItemMeta";
+import { getApplicableRewards } from "@/lib/price";
 import {
   fetchFranchiseByCode,
   getFranchiseCode,
@@ -111,13 +112,16 @@ const Cart = () => {
   };
 
   const bagTotal = calculateTotal();
+  const { freeDelivery } = getApplicableRewards(offerData, bagTotal);
+  const shippingCost = freeDelivery ? 0 : 50;
+  const couponBase = bagTotal + shippingCost;
   const couponPercent = appliedCoupon
     ? getFranchiseDiscountPercent(appliedCoupon.franchise)
     : NaN;
   const couponDiscount = appliedCoupon
-    ? getFranchiseCouponDiscount(appliedCoupon.franchise, bagTotal)
+    ? getFranchiseCouponDiscount(appliedCoupon.franchise, couponBase)
     : 0;
-  const grandTotal = Math.max(0, bagTotal - couponDiscount);
+  const grandTotal = Math.max(0, couponBase - couponDiscount);
 
   const handleApplyCoupon = async (rawCode) => {
     const code = String(rawCode || "").trim();
@@ -150,7 +154,7 @@ const Cart = () => {
         return;
       }
 
-      const discount = getFranchiseCouponDiscount(franchise, bagTotal);
+      const discount = getFranchiseCouponDiscount(franchise, couponBase);
       if (discount <= 0) {
         setAppliedCoupon(null);
         setCouponError("This coupon has no discount for your bag");
