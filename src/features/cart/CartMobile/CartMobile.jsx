@@ -8,6 +8,7 @@ import FOMO_USERS, { pickUsers, randomUser } from "@/data/fomoUsers";
 import { getApplicableRewards } from "@/lib/price";
 import { PAYMENT_METHOD, estimatePartialCodAmounts } from "@/lib/payment";
 import { getCartItemAttributeTags } from "@/lib/cartItemMeta";
+import CouponBox from "../CouponBox/CouponBox";
 
 const COD_FEE = 49;
 
@@ -21,6 +22,12 @@ const initials = (name) => (name || "").trim().slice(0, 6) || "Friend";
 const CartMobile = ({
   cartItems,
   bagTotal,
+  couponDiscount = 0,
+  appliedCouponCode,
+  couponError,
+  couponLoading,
+  onApplyCoupon,
+  onRemoveCoupon,
   offerData,
   paymentMethod,
   onPaymentMethodChange,
@@ -42,11 +49,14 @@ const CartMobile = ({
   const buyerAvatars = useMemo(() => pickUsers(3), []);
 
   const shippingCost = freeDelivery ? 0 : 50;
-  const total = Number((bagTotal + shippingCost - discount).toFixed(2));
+  const total = Number(
+    (bagTotal + shippingCost - discount - couponDiscount).toFixed(2)
+  );
   const partial = estimatePartialCodAmounts(total);
   const codBalance = Math.max(0, total - partial.advanceAmount);
   const codDoorTotal = codBalance + COD_FEE;
-  const savings = Math.max(0, 50 - shippingCost) + discount;
+  const savings =
+    Math.max(0, 50 - shippingCost) + discount + Number(couponDiscount || 0);
 
   /* ---------- COUNTDOWN ---------- */
   const [secs, setSecs] = useState(14 * 60 + 59);
@@ -526,6 +536,18 @@ const CartMobile = ({
         );
       })}
 
+      {/* COUPON */}
+      <div className={styles.couponWrap}>
+        <CouponBox
+          appliedCode={appliedCouponCode}
+          discount={couponDiscount}
+          error={couponError}
+          loading={couponLoading}
+          onApply={onApplyCoupon}
+          onRemove={onRemoveCoupon}
+        />
+      </div>
+
       {/* ORDER SUMMARY */}
       <div className={styles.sec}>Order Summary</div>
       <div className={styles.sum}>
@@ -552,6 +574,16 @@ const CartMobile = ({
               )}
             </div>
           </div>
+          {couponDiscount > 0 && (
+            <div className={styles.sumRow}>
+              <div className={styles.sl}>
+                Coupon{appliedCouponCode ? ` (${appliedCouponCode})` : ""}
+              </div>
+              <div className={`${styles.sv} ${styles.svGreen}`}>
+                − {formatINR(couponDiscount)}
+              </div>
+            </div>
+          )}
           {discount > 0 && (
             <div className={styles.sumRow}>
               <div className={styles.sl}>Discount</div>

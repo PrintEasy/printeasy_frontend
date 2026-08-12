@@ -2,6 +2,7 @@ import React from "react";
 import styles from "./pricelist.module.scss";
 import { getApplicableRewards } from "@/lib/price";
 import { PAYMENT_METHOD, estimatePartialCodAmounts } from "@/lib/payment";
+import CouponBox from "../CouponBox/CouponBox";
 
 const COD_FEE = 49;
 
@@ -11,6 +12,12 @@ const formatINR = (n) =>
 const PriceList = ({
   bagTotal,
   grandTotal,
+  couponDiscount = 0,
+  appliedCouponCode,
+  couponError,
+  couponLoading,
+  onApplyCoupon,
+  onRemoveCoupon,
   paymentMethod,
   onPaymentMethodChange,
   onPlaceOrder,
@@ -28,7 +35,10 @@ const PriceList = ({
   const partial = estimatePartialCodAmounts(finalPayable);
   const codBalance = Math.max(0, finalPayable - partial.advanceAmount);
   const codDoorTotal = codBalance + COD_FEE;
-  const savings = Math.max(0, 50 - shippingCost) + Number(discount || 0);
+  const savings =
+    Math.max(0, 50 - shippingCost) +
+    Number(discount || 0) +
+    Number(couponDiscount || 0);
 
   const ctaSub =
     paymentMethod === PAYMENT_METHOD.PARTIAL_COD
@@ -51,6 +61,15 @@ const PriceList = ({
 
   return (
     <div className={styles.rightCol}>
+      <CouponBox
+        appliedCode={appliedCouponCode}
+        discount={couponDiscount}
+        error={couponError}
+        loading={couponLoading}
+        onApply={onApplyCoupon}
+        onRemove={onRemoveCoupon}
+      />
+
       {/* ORDER SUMMARY CARD */}
       <div className={styles.secLabel}>Order Summary</div>
       <div className={styles.sum}>
@@ -73,6 +92,16 @@ const PriceList = ({
               )}
             </div>
           </div>
+          {couponDiscount > 0 && (
+            <div className={styles.sumRow}>
+              <div className={styles.sl}>
+                Coupon{appliedCouponCode ? ` (${appliedCouponCode})` : ""}
+              </div>
+              <div className={`${styles.sv} ${styles.svGreen}`}>
+                − {formatINR(couponDiscount)}
+              </div>
+            </div>
+          )}
           {discount > 0 && (
             <div className={styles.sumRow}>
               <div className={styles.sl}>Discount</div>

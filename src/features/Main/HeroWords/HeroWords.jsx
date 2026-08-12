@@ -1,86 +1,89 @@
 "use client";
 
-import { useEffect } from "react";
+import Link from "next/link";
 import styles from "./HeroWords.module.scss";
 
-const names = [
-  "Super Aarav", "Nautanki Vihaan", "Drama Queen Diya", "Maasi’s Jaan Riya",
-  "Papa’s Pari Ananya", "Future Cricketer Virat", "Chota Don Kabir",
-  "Rowdy Reyansh", "Dadi’s Ladla Arjun", "Sher Dil Aditya",
-  "Hero No.1 Ishaan", "Little Miss Saanvi", "Rockstar Vivaan",
-  "Boss Baby Ruhi", "Attitude King Samar", "Smile Please Siya"
+const ROW_ONE = [
+  { emoji: "💅", name: "Drama Queen Diya", quote: '"Main hi star hoon"' },
+  { emoji: "😎", name: "Attitude King Samar", quote: '"Bada dhamaka"' },
+  { emoji: "👑", name: "Boss Baby Ruhi", quote: '"Rules? I make them"' },
+  { emoji: "🕶️", name: "Chota Don Kabir", quote: '"Sabka favourite"' },
+  { emoji: "🎈", name: "Masti Jaan Riya", quote: '"Fun, full-time job"' },
+  { emoji: "⚡", name: "Nautanki Vihaan", quote: '"Rules bend for me"' },
 ];
 
-const shorts = ["VIBE", "LIT", "EPIC", "BOSS", "ICON", "SWAG", "RAD", "XOXO"];
-
-const colors = [
-  "#ff4d00",
-  "#3b82f6",
-  "#f472b6",
-  "#22c55e",
-  "#eab308",
-  "#ffffff"
+const ROW_TWO = [
+  { emoji: "🦁", name: "Sherdil Aarav", quote: '"Dil sher jaisa"' },
+  { emoji: "🚀", name: "Rocket Man Reyansh", quote: '"Sky\'s not the limit"' },
+  { emoji: "🌸", name: "Pyaari Zara", quote: '"Sweet but savage"' },
+  { emoji: "🕸️", name: "Little Spidey Vihaan", quote: '"Web slinger in training"' },
+  { emoji: "🏆", name: "Champion Aadhya", quote: '"Born to win"' },
+  { emoji: "🐉", name: "Dragon Heart Ishaan", quote: '"Fierce and fun"' },
 ];
 
-export default function HeroWords() {
-  const shuffle = (arr) => {
-    for (let i = arr.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
-    return arr;
-  };
+const PATCH_COLORS = [
+  styles.c1,
+  styles.c2,
+  styles.c3,
+  styles.c4,
+  styles.c5,
+  styles.c6,
+  styles.c7,
+  styles.c8,
+  styles.c9,
+  styles.c10,
+];
 
-  const setRandomColor = (el) => {
-    el.style.backgroundColor =
-      colors[Math.floor(Math.random() * colors.length)];
-  };
-
-  const fillTrack = (trackId) => {
-    const track = document.getElementById(trackId);
-    if (!track) return;
-
-    track.innerHTML = "";
-
-    const combined = shuffle([...names, ...shorts]);
-    const list = [...combined, ...combined]; // seamless loop
-
-    list.forEach((text) => {
-      const item = document.createElement("div");
-      item.className = styles.tickerItem;
-      item.innerText = text;
-      setRandomColor(item);
-
-      item.onclick = () => setRandomColor(item);
-      track.appendChild(item);
-    });
-  };
-
-  useEffect(() => {
-    const tracks = ["track-1", "track-2", "track-3", "track-4"];
-
-    tracks.forEach((id) => fillTrack(id));
-  }, []);
+function PatchRow({ items, reverse }) {
+  const looped = [...items, ...items];
 
   return (
-    <section className={styles.wrapper}>
-      <div className={styles.tickerContainer}>
-        <div className={styles.tickerWrapper}>
-          <div id="track-1" className={`${styles.tickerTrack} ${styles.left}`} />
-        </div>
+    <div className={styles.trackWrap}>
+      <div className={`${styles.track} ${reverse ? styles.row2 : styles.row1}`}>
+        {looped.map((patch, index) => (
+          <div
+            key={`${patch.name}-${index}`}
+            className={`${styles.patch} ${PATCH_COLORS[index % PATCH_COLORS.length]}`}
+          >
+            <div className={styles.emoji}>{patch.emoji}</div>
+            <div className={styles.name}>{patch.name}</div>
+            <div className={styles.quote}>{patch.quote}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
-        <div className={styles.tickerWrapper}>
-          <div id="track-2" className={`${styles.tickerTrack} ${styles.right}`} />
-        </div>
+export default function HeroWords() {
+  return (
+    <section className={styles.feed} aria-label="Made in the last hour">
+      <span className={`${styles.sparkle} ${styles.s1}`} aria-hidden>
+        ✦
+      </span>
+      <span className={`${styles.sparkle} ${styles.s2}`} aria-hidden>
+        ✧
+      </span>
+      <span className={`${styles.sparkle} ${styles.s3}`} aria-hidden>
+        ✦
+      </span>
 
-        <div className={styles.tickerWrapper}>
-          <div id="track-3" className={`${styles.tickerTrack} ${styles.left}`} />
-        </div>
-
-        <div className={styles.tickerWrapper}>
-          <div id="track-4" className={`${styles.tickerTrack} ${styles.right}`} />
+      <div className={styles.head}>
+        <div className={styles.headLeft}>
+          <span className={styles.liveDot} aria-hidden />
+          <span>Made in the last hour</span>
         </div>
       </div>
+
+      <h3 className={styles.title}>Every kid&apos;s got a title.</h3>
+      <p className={styles.sub}>Real names, real personalities, on real tees →</p>
+
+      <PatchRow items={ROW_ONE} />
+      <PatchRow items={ROW_TWO} reverse />
+
+      <Link href="/search" className={styles.cta}>
+        ✏️ Create your kid&apos;s title →
+      </Link>
     </section>
   );
 }
