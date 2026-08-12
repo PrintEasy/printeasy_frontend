@@ -883,7 +883,9 @@ const ProductDetails = () => {
                   <button
                     type="button"
                     className={styles.tapHint}
-                    onClick={() => setIsEditing(true)}
+                    onClick={() =>
+                      editorRef.current?.focusText?.() || setIsEditing(true)
+                    }
                   >
                     <span className={styles.tapHintEmoji}>👆</span>
                     <span className={styles.tapHintTxt}>
@@ -972,7 +974,9 @@ const ProductDetails = () => {
                   <button
                     type="button"
                     className={styles.persBar}
-                    onClick={() => setIsEditing(true)}
+                    onClick={() =>
+                      editorRef.current?.focusText?.() || setIsEditing(true)
+                    }
                   >
                     <span className={styles.persIcon}>✏️</span>
                     <span className={styles.persTxt}>
