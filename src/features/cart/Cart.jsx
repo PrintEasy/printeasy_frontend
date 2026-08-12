@@ -31,6 +31,7 @@ import {
   fetchFranchiseByCode,
   getFranchiseCode,
   getFranchiseCouponDiscount,
+  getFranchiseDiscountPercent,
   getFranchiseMinOrder,
 } from "@/lib/franchiseCoupon";
 
@@ -110,6 +111,9 @@ const Cart = () => {
   };
 
   const bagTotal = calculateTotal();
+  const couponPercent = appliedCoupon
+    ? getFranchiseDiscountPercent(appliedCoupon.franchise)
+    : NaN;
   const couponDiscount = appliedCoupon
     ? getFranchiseCouponDiscount(appliedCoupon.franchise, bagTotal)
     : 0;
@@ -361,6 +365,7 @@ const Cart = () => {
                   cartItems={cartItems}
                   bagTotal={bagTotal}
                   couponDiscount={couponDiscount}
+                  couponPercent={couponPercent}
                   appliedCouponCode={appliedCoupon?.code}
                   couponError={couponError}
                   couponLoading={couponLoading}
@@ -552,6 +557,7 @@ const Cart = () => {
                     bagTotal={bagTotal}
                     grandTotal={grandTotal}
                     couponDiscount={couponDiscount}
+                    couponPercent={couponPercent}
                     appliedCouponCode={appliedCoupon?.code}
                     couponError={couponError}
                     couponLoading={couponLoading}
