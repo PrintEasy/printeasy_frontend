@@ -129,11 +129,6 @@ const Cart = () => {
       setCouponError("Enter a coupon code");
       return;
     }
-    if (!accessToken) {
-      toast.warning("Please login to apply a coupon");
-      setIsLoginModalVisible(true);
-      return;
-    }
 
     setCouponLoading(true);
     setCouponError("");
@@ -168,16 +163,9 @@ const Cart = () => {
       toast.success("Coupon applied");
     } catch (error) {
       console.error(error);
-      const status = error?.response?.status;
-      if (status === 401 || status === 403) {
-        toast.warning("Please login to apply a coupon");
-        setIsLoginModalVisible(true);
-        setCouponError("Login required to apply this coupon");
-      } else {
-        setCouponError(
-          error?.response?.data?.message || "Could not apply coupon"
-        );
-      }
+      setCouponError(
+        error?.response?.data?.message || "Could not apply coupon"
+      );
       setAppliedCoupon(null);
     } finally {
       setCouponLoading(false);
