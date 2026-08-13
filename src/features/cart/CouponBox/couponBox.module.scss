@@ -107,6 +107,20 @@
   font-weight: 800;
   letter-spacing: 0.06em;
   color: #0f0e0c;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pctBadge {
+  background: #e6f9f2;
+  color: #00a86b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
 }
 
 .appliedSave {
