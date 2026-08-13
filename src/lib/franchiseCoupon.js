@@ -29,8 +29,37 @@ function pickString(obj, keys) {
 function pickNumber(obj, keys) {
   if (!obj || typeof obj !== "object") return NaN;
   for (const key of keys) {
-    const n = Number(obj[key]);
-    if (!Number.isNaN(n) && obj[key] != null && obj[key] !== "") return n;
+    const parsed = parsePercentValue(obj[key]);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return NaN;
+}
+
+/** Accepts 15, "15", "15%". */
+function parsePercentValue(val) {
+  if (val == null || val === "") return NaN;
+  if (typeof val === "number") return Number.isFinite(val) ? val : NaN;
+  const n = Number(String(val).trim().replace(/%/g, ""));
+  return Number.isFinite(n) ? n : NaN;
+}
+
+export function getFranchiseDiscountPercent(franchise) {
+  if (!franchise || typeof franchise !== "object") return NaN;
+  const sources = [franchise, franchise.data, franchise.details, franchise.offer];
+  for (const src of sources) {
+    const pct = pickNumber(src, [
+      "discountPercentage",
+      "discountPercent",
+      "discount_percentage",
+      "percentage",
+      "percent",
+      "discount",
+      "commissionPercentage",
+      "commission_percentage",
+      "off",
+      "offPercent",
+    ]);
+    if (!Number.isNaN(pct) && pct > 0) return pct;
   }
   return NaN;
 }
@@ -73,19 +102,6 @@ export function getFranchiseMinOrder(franchise) {
     "min_order_amount",
     "minOrder",
     "min_order",
-  ]);
-}
-
-export function getFranchiseDiscountPercent(franchise) {
-  return pickNumber(franchise, [
-    "discountPercentage",
-    "discountPercent",
-    "discount_percentage",
-    "percentage",
-    "percent",
-    "discount",
-    "commissionPercentage",
-    "commission_percentage",
   ]);
 }
 

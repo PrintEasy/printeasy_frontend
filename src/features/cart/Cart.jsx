@@ -116,7 +116,10 @@ const Cart = () => {
   const shippingCost = freeDelivery ? 0 : 50;
   const couponBase = bagTotal + shippingCost;
   const couponPercent = appliedCoupon
-    ? getFranchiseDiscountPercent(appliedCoupon.franchise)
+    ? Number.isFinite(Number(appliedCoupon.percent)) &&
+      Number(appliedCoupon.percent) > 0
+      ? Number(appliedCoupon.percent)
+      : getFranchiseDiscountPercent(appliedCoupon.franchise)
     : NaN;
   const couponDiscount = appliedCoupon
     ? getFranchiseCouponDiscount(appliedCoupon.franchise, couponBase)
@@ -156,9 +159,11 @@ const Cart = () => {
         return;
       }
 
+      const percent = getFranchiseDiscountPercent(franchise);
       setAppliedCoupon({
         code: (getFranchiseCode(franchise) || code).toUpperCase(),
         franchise,
+        percent,
       });
       toast.success("Coupon applied");
     } catch (error) {

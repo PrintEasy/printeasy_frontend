@@ -24,6 +24,7 @@ export default function CouponBox({
   };
 
   if (appliedCode) {
+    const hasPercent = !Number.isNaN(Number(percent)) && Number(percent) > 0;
     return (
       <div className={styles.box}>
         <div className={styles.applied}>
@@ -31,10 +32,15 @@ export default function CouponBox({
             <Check size={16} strokeWidth={3} />
           </div>
           <div className={styles.appliedBody}>
-            <div className={styles.appliedCode}>{appliedCode}</div>
+            <div className={styles.appliedCode}>
+              {appliedCode}
+              {hasPercent ? (
+                <span className={styles.pctBadge}>{percent}% OFF</span>
+              ) : null}
+            </div>
             <div className={styles.appliedSave}>
               {discount > 0
-                ? !Number.isNaN(Number(percent)) && Number(percent) > 0
+                ? hasPercent
                   ? `${percent}% off · You saved ${formatINR(discount)}`
                   : `You saved ${formatINR(discount)}`
                 : "Coupon applied"}
