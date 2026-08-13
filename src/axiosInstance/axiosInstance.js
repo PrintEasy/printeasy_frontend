@@ -9,6 +9,10 @@ const api = axios.create({
 
 
 api.interceptors.request.use((config) => {
+  if (config.skipAuth) {
+    delete config.headers.Authorization;
+    return config;
+  }
   const token = Cookies.get("idToken");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -22,7 +26,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (
+      error.response?.status === 401 &&
+      !originalRequest._retry &&
+      !originalRequest.skipAuth
+    ) {
       originalRequest._retry = true;
 
       const newToken = await refreshIdToken();

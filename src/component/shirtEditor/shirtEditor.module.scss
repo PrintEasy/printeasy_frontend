@@ -79,19 +79,23 @@
   display: inline;
 }
 
-/* 👇 Overlay image */
+/* Tap-to-type hand — sized like the original 120×120 overlay */
 .overlayLoader {
   position: absolute;
-  width: 220%;
-  height: 220%;
-
-  /* anchor near end of text */
-  right: -160px;        // tweak as needed
-  top: 50%;
-  transform: translateY(-50%);
-
-  pointer-events: none; // doesn't block clicks
+  top: 60%;
+  left: 50%;
+  width: 120px;
+  height: 120px;
+  transform: translate(20%, -50%);
+  pointer-events: none;
   z-index: 20;
+
+  :global(canvas),
+  :global(svg),
+  :global(div) {
+    width: 100% !important;
+    height: 100% !important;
+  }
 }
 
 

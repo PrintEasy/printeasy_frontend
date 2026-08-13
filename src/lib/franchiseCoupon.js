@@ -130,7 +130,7 @@ export async function fetchFranchiseByCode(api, code) {
   try {
     const byCode = await api.get(
       `/v2/franchise/${encodeURIComponent(trimmed)}`,
-      { headers }
+      { headers, skipAuth: true }
     );
     const match = matchFromPayload(byCode?.data);
     if (match) return match;
@@ -148,6 +148,6 @@ export async function fetchFranchiseByCode(api, code) {
     // Fall through to the list endpoint.
   }
 
-  const res = await api.get("/v2/franchise", { headers });
+  const res = await api.get("/v2/franchise", { headers, skipAuth: true });
   return matchFromPayload(res?.data);
 }

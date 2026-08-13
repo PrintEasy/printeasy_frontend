@@ -417,12 +417,13 @@ const ShirtEditor = forwardRef(
                 data-enable-grammarly="false"
               />
               {!hasUserInteracted && (
-                <DotLottieReact
-                  src="https://lottie.host/62e86d1a-c1c4-4325-836b-2bf856f7c628/VjcOjevAOa.lottie"
-                  loop
-                  autoplay
-                  className={styles.overlayLoader}
-                />
+                <div className={styles.overlayLoader} aria-hidden>
+                  <DotLottieReact
+                    src="https://lottie.host/62e86d1a-c1c4-4325-836b-2bf856f7c628/VjcOjevAOa.lottie"
+                    loop
+                    autoplay
+                  />
+                </div>
               )}
             </>
           )}
