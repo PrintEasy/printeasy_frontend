@@ -25,7 +25,6 @@ import { db } from "@/lib/db";
 import styles from "./ProductDetails.module.scss";
 import api from "@/axiosInstance/axiosInstance";
 import BottomSheet from "@/component/BottomSheet/BottomSheet";
-import AddToCartSuccessSheet from "@/component/AddToCartSuccessSheet/AddToCartSuccessSheet";
 import ProductDetailsShimmer from "@/component/ProductDetailsShimmer/ProductDetailsShimmer";
 import { useCart } from "@/context/CartContext";
 import bag from "../../../assessts/bag.svg";
@@ -190,10 +189,7 @@ const ProductDetails = () => {
   const [activeSection, setActiveSection] = useState(null);
   const [sizeInfo, setSizeInfo] = useState(null);
   const [showSizeSheet, setShowSizeSheet] = useState(false);
-  const [relatedId, setRelatedId] = useState("");
   const [loader, setLoader] = useState(false);
-  const [relatedData, setRelatedData] = useState([]);
-  const [showSuccessCart, setShowSuccessCart] = useState(false);
   const [isCustomizable, setIsCustomizable] = useState(false);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -452,7 +448,6 @@ const ProductDetails = () => {
       updateCart(updatedCartItems.length);
       setCartBagTotal(sumCartBagTotal(updatedCartItems));
       await refreshProductCartState();
-      setShowSuccessCart(true);
 
       console.log("✅ Item added to cart successfully");
     } catch (err) {
@@ -608,7 +603,6 @@ const ProductDetails = () => {
 
         setProduct(data);
         setIsCustomizable(!!data?.isCustomizable);
-        setRelatedId(data?.id);
         setIsWishlisted(data?.isInWishlist);
         setCollectionId(data?.collectionIds[0]);
       } catch (error) {
@@ -635,25 +629,6 @@ const ProductDetails = () => {
       });
     }
   }, [product]);
-
-  useEffect(() => {
-    if (relatedId) {
-      const getRelatedProduct = async () => {
-        try {
-          const res = await api.get(`/v2/product/${relatedId}/related`, {
-            headers: {
-              "x-api-key":
-                "454ccaf106998a71760f6729e7f9edaf1df17055b297b3008ff8b65a5efd7c10",
-            },
-          });
-          setRelatedData(res?.data?.data);
-        } catch (error) {
-          console.log("Related fetch error", error);
-        }
-      };
-      getRelatedProduct();
-    }
-  }, [relatedId]);
 
   const reviewStats = useMemo(() => getReviewStats(productReviews), []);
 
@@ -1405,14 +1380,6 @@ const ProductDetails = () => {
               <AddToBagLoader />
             </DynamicModal>
 
-            {/* Success Sheet */}
-            <BottomSheet
-              open={showSuccessCart}
-              onClose={() => setShowSuccessCart(false)}
-            >
-              <AddToCartSuccessSheet relatedData={relatedData} />
-            </BottomSheet>
-
             <BottomSheet
               open={showOfferSheet}
               onClose={() => setShowOfferSheet(false)}
@@ -1464,17 +1431,6 @@ const ProductDetails = () => {
           <div className={styles.stickyBar}>
             {cartProductQty > 0 ? (
               <>
-                <button
-                  type="button"
-                  className={styles.vcBtn}
-                  onClick={() => router.push("/cart")}
-                >
-                  {cartCount > 0 && (
-                    <span className={styles.vcBadge}>{cartCount}</span>
-                  )}
-                  <Image src={bag} alt="" width={17} height={17} />
-                  <span className={styles.vcTxt}>View Cart</span>
-                </button>
                 <div className={styles.qtyStepper} aria-label="Quantity">
                   <button
                     type="button"
@@ -1494,9 +1450,6 @@ const ProductDetails = () => {
                     <Plus size={16} />
                   </button>
                 </div>
-              </>
-            ) : (
-              <>
                 <button
                   type="button"
                   className={styles.vcBtn}
@@ -1508,6 +1461,9 @@ const ProductDetails = () => {
                   <Image src={bag} alt="" width={17} height={17} />
                   <span className={styles.vcTxt}>View Cart</span>
                 </button>
+              </>
+            ) : (
+              <>
                 <button
                   type="button"
                   className={styles.addBtn}
@@ -1518,6 +1474,17 @@ const ProductDetails = () => {
                     {loader ? "ADDING..." : "ADD TO CART"}
                   </span>
                   <span className={styles.addBtnAmt}>₹{stickyLineTotal}</span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.vcBtn}
+                  onClick={() => router.push("/cart")}
+                >
+                  {cartCount > 0 && (
+                    <span className={styles.vcBadge}>{cartCount}</span>
+                  )}
+                  <Image src={bag} alt="" width={17} height={17} />
+                  <span className={styles.vcTxt}>View Cart</span>
                 </button>
               </>
             )}
