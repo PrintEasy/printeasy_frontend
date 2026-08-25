@@ -274,10 +274,88 @@ const SHIPPING_POLICY = {
     `,
 };
 
+const TERMS_AND_CONDITIONS = {
+  title: "Terms and Condition",
+  content: `
+      <p>
+        Welcome to <strong>Onrise</strong>. By accessing and using our website
+        <a href="https://onrise.in">onrise.in</a>, you agree to the following terms
+        and conditions.
+      </p>
+      <ol>
+        <li>
+          General Terms
+          <ul>
+            <li>
+              Access to and use of this website constitutes acceptance of these Terms
+              and Conditions.
+            </li>
+            <li>
+              We reserve the right to modify these terms at any time without prior
+              notice.
+            </li>
+          </ul>
+        </li>
+        <li>
+          Orders and Payments
+          <ul>
+            <li>All orders are subject to product availability.</li>
+            <li>
+              Payments must be completed in full before an order is processed.
+            </li>
+            <li>
+              Prices and product availability are subject to change without notice.
+            </li>
+          </ul>
+        </li>
+        <li>
+          Shipping &amp; Delivery
+          <ul>
+            <li>
+              Orders are dispatched within <strong>2 working days</strong> after
+              payment confirmation.
+            </li>
+            <li>
+              Delivery times may vary based on your location and other factors.
+            </li>
+          </ul>
+        </li>
+        <li>
+          Returns &amp; Refunds
+          <ul>
+            <li>
+              For details on returns and refunds, please refer to our Refund Policy
+              below.
+            </li>
+          </ul>
+        </li>
+        <li>
+          Intellectual Property
+          <ul>
+            <li>
+              All images, designs, text, and content on this website are the property
+              of Onrise and are protected by intellectual property laws.
+            </li>
+          </ul>
+        </li>
+        <li>
+          Contact Us<br />
+          <strong>Puneeth</strong><br />
+          Designation: Manager<br />
+          Address of the Company: Onrise , No64, 3rd Floor, 1st Cross
+          SANJAYAGANDHINAGAR BASAVESHWARNAGAR, Bangalore 560079<br />
+          Contact us: 9019909704<br />
+          Email: <a href="mailto:onrisefashion@gmail.com">onrisefashion@gmail.com</a>
+        </li>
+      </ol>
+    `,
+};
+
 export const STATIC_POLICIES = {
   "privacy-policy": PRIVACY_POLICY,
   "refund-policy": REFUND_POLICY,
   "return-policy": RETURN_POLICY,
   "return-and-exchange": RETURN_POLICY,
   "shipping-policy": SHIPPING_POLICY,
+  "terms-and-conditions": TERMS_AND_CONDITIONS,
 };
