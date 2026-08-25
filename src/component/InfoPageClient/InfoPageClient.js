@@ -4,13 +4,20 @@ import React, { useEffect, useState } from "react";
 import api from "@/axiosInstance/axiosInstance";
 import styles from "./info.module.scss";
 import { Loader2 } from "lucide-react";
+import { STATIC_POLICIES } from "@/data/staticPolicies";
 
 const InfoPageClient = ({ slug }) => {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(STATIC_POLICIES[slug] || null);
+  const [loading, setLoading] = useState(!STATIC_POLICIES[slug]);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
   useEffect(() => {
+    if (STATIC_POLICIES[slug]) {
+      setData(STATIC_POLICIES[slug]);
+      setLoading(false);
+      return;
+    }
+
     const getData = async () => {
       try {
         const res = await api.get(`${apiUrl}/v1/policies/${slug}`, {
@@ -28,7 +35,7 @@ const InfoPageClient = ({ slug }) => {
     };
 
     if (slug) getData();
-  }, [slug]);
+  }, [slug, apiUrl]);
 
   if (loading)
     return (
