@@ -12,7 +12,8 @@ const SUPPORT_DISPLAY = "+91 90199 09704";
 
 const POLICIES = [
   { slug: "privacy-policy", label: "Privacy Policy", icon: "🔒" },
-  { slug: "return-and-exchange", label: "Return & Exchange", icon: "↩️" },
+  { slug: "refund-policy", label: "Refund Policy", icon: "↩️" },
+  { slug: "return-policy", label: "Return Policy", icon: "🔄" },
   { slug: "shipping-policy", label: "Shipping Policy", icon: "🚚" },
   { slug: "terms-and-conditions", label: "Terms & Conditions", icon: "📄" },
 ];
