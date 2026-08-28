@@ -13,9 +13,11 @@ import {
   Minus,
   Heart,
   ChevronRight,
+  ChevronLeft,
   Truck,
   Gift,
   Percent,
+  ShoppingCart,
 } from "lucide-react";
 import Image from "next/image";
 import { toast, ToastContainer } from "react-toastify";
@@ -779,6 +781,14 @@ const ProductDetails = () => {
                 <div className={styles.mediaHeroTop}>
                   <button
                     type="button"
+                    className={styles.mediaBackBtn}
+                    onClick={() => router.push("/")}
+                    aria-label="Back to home"
+                  >
+                    <ChevronLeft size={28} strokeWidth={2} />
+                  </button>
+                  <button
+                    type="button"
                     className={`${styles.mediaWishBtn} ${
                       isWishlisted ? styles.mediaWishBtnLiked : ""
                     }`}
@@ -1438,7 +1448,7 @@ const ProductDetails = () => {
                     onClick={decrementProductQty}
                     aria-label="Decrease quantity"
                   >
-                    <Minus size={16} />
+                    <Minus size={18} strokeWidth={2.5} />
                   </button>
                   <div className={styles.qtyValue}>{cartProductQty}</div>
                   <button
@@ -1447,46 +1457,51 @@ const ProductDetails = () => {
                     onClick={incrementProductQty}
                     aria-label="Increase quantity"
                   >
-                    <Plus size={16} />
+                    <Plus size={18} strokeWidth={2.5} />
                   </button>
                 </div>
                 <button
                   type="button"
-                  className={styles.vcBtn}
+                  className={styles.viewCartBtn}
                   onClick={() => router.push("/cart")}
                 >
-                  {cartCount > 0 && (
-                    <span className={styles.vcBadge}>{cartCount}</span>
-                  )}
-                  <Image src={bag} alt="" width={17} height={17} />
-                  <span className={styles.vcTxt}>View Cart</span>
+                  <span className={styles.vcLeft}>
+                    <span className={styles.vcIconWrap}>
+                      <Image src={bag} alt="" width={20} height={20} />
+                      {cartCount > 0 ? (
+                        <span className={styles.vcBadge}>{cartCount}</span>
+                      ) : null}
+                    </span>
+                    <span className={styles.vcCopy}>
+                      <span className={styles.vcTitle}>View Bag</span>
+                      <span className={styles.vcSub}>
+                        {cartCount} {cartCount === 1 ? "item" : "items"}
+                      </span>
+                    </span>
+                  </span>
+                  <span className={styles.vcRight}>
+                    <span className={styles.vcPrice}>
+                      ₹{cartBagTotal.toLocaleString("en-IN")}
+                    </span>
+                    <ChevronRight size={18} strokeWidth={2.5} />
+                  </span>
                 </button>
               </>
             ) : (
-              <>
-                <button
-                  type="button"
-                  className={styles.addBtn}
-                  onClick={addToCart}
-                  disabled={loader}
-                >
+              <button
+                type="button"
+                className={styles.addBtnFull}
+                onClick={addToCart}
+                disabled={loader}
+              >
+                <span className={styles.addBtnLeft}>
+                  <ShoppingCart size={18} strokeWidth={2.25} />
                   <span className={styles.addBtnLabel}>
-                    {loader ? "ADDING..." : "ADD TO CART"}
+                    {loader ? "Adding..." : "Add to Bag"}
                   </span>
-                  <span className={styles.addBtnAmt}>₹{stickyLineTotal}</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.vcBtn}
-                  onClick={() => router.push("/cart")}
-                >
-                  {cartCount > 0 && (
-                    <span className={styles.vcBadge}>{cartCount}</span>
-                  )}
-                  <Image src={bag} alt="" width={17} height={17} />
-                  <span className={styles.vcTxt}>View Cart</span>
-                </button>
-              </>
+                </span>
+                <span className={styles.addBtnAmt}>₹{stickyLineTotal}</span>
+              </button>
             )}
           </div>
 
