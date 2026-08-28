@@ -13,6 +13,7 @@ import {
   Minus,
   Heart,
   ChevronRight,
+  ChevronLeft,
   Truck,
   Gift,
   Percent,
@@ -778,6 +779,14 @@ const ProductDetails = () => {
             <div className={styles.productMediaColumn}>
               <div className={styles.mediaHero}>
                 <div className={styles.mediaHeroTop}>
+                  <button
+                    type="button"
+                    className={styles.mediaBackBtn}
+                    onClick={() => router.push("/")}
+                    aria-label="Back to home"
+                  >
+                    <ChevronLeft size={28} strokeWidth={2} />
+                  </button>
                   <button
                     type="button"
                     className={`${styles.mediaWishBtn} ${
