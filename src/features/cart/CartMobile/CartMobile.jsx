@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronLeft, Heart } from "lucide-react";
 import styles from "./cartMobile.module.scss";
-import FOMO_USERS, { pickUsers, randomUser } from "@/data/fomoUsers";
+import CartOfferCard from "../CartOfferCard/CartOfferCard";
 import { getApplicableRewards } from "@/lib/price";
 import { PAYMENT_METHOD, estimatePartialCodAmounts } from "@/lib/payment";
 import { getCartItemAttributeTags } from "@/lib/cartItemMeta";
@@ -14,10 +14,6 @@ const COD_FEE = 49;
 
 const formatINR = (n) =>
   `₹${Number(n || 0).toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
-
-const formatTwo = (n) => String(n).padStart(2, "0");
-
-const initials = (name) => (name || "").trim().slice(0, 6) || "Friend";
 
 const CartMobile = ({
   cartItems,
@@ -47,8 +43,6 @@ const CartMobile = ({
     [offerData, bagTotal]
   );
 
-  const buyerAvatars = useMemo(() => pickUsers(3), []);
-
   const shippingCost = freeDelivery ? 0 : 50;
   const total = Number(
     (bagTotal + shippingCost - discount - couponDiscount).toFixed(2)
@@ -59,123 +53,10 @@ const CartMobile = ({
   const savings =
     Math.max(0, 50 - shippingCost) + discount + Number(couponDiscount || 0);
 
-  /* ---------- COUNTDOWN ---------- */
-  const [secs, setSecs] = useState(14 * 60 + 59);
-  useEffect(() => {
-    const id = setInterval(
-      () => setSecs((s) => (s > 0 ? s - 1 : 0)),
-      1000
-    );
-    return () => clearInterval(id);
-  }, []);
-  const mins = Math.floor(secs / 60);
-  const ss = secs % 60;
-
-  /* ---------- SLOTS (FOMO) ---------- */
-  const TOTAL_SLOTS = 7;
-  const [slots, setSlots] = useState(() => {
-    const seeded = pickUsers(3);
-    return [
-      { state: "taken", user: seeded[0] },
-      { state: "taken", user: seeded[1] },
-      { state: "taken", user: seeded[2] },
-      { state: "open", user: null },
-      { state: "open", user: null },
-      { state: "open", user: null },
-      { state: "you", user: null },
-    ];
-  });
-  const [toast, setToast] = useState(null);
-  const [buyersLine, setBuyersLine] = useState(() => {
-    const seeded = pickUsers(3);
-    return `${seeded[0].name}, ${seeded[1].name}, ${seeded[2].name} got free personalisation today`;
-  });
-  const scheduleRef = useRef(null);
-  const settleRef = useRef(null);
-  const youClaimedRef = useRef(false);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const claimNext = () => {
-      if (cancelled) return;
-      let hasOpen = false;
-      let claimedUser = null;
-      let claimedIdx = -1;
-
-      setSlots((prev) => {
-        const nextIdx = prev.findIndex((s) => s.state === "open");
-        if (nextIdx === -1) return prev;
-        const used = prev.map((s) => s.user?.name).filter(Boolean);
-        const user = randomUser(used);
-        hasOpen = true;
-        claimedUser = user;
-        claimedIdx = nextIdx;
-        return prev.map((s, i) =>
-          i === nextIdx ? { state: "claiming", user } : s
-        );
-      });
-
-      if (!hasOpen) return;
-
-      settleRef.current = setTimeout(() => {
-        if (cancelled) return;
-        setSlots((curr) =>
-          curr.map((s, i) =>
-            i === claimedIdx ? { state: "taken", user: claimedUser } : s
-          )
-        );
-        setToast(
-          `${claimedUser.name} from ${claimedUser.city} just claimed free personalisation!`
-        );
-        setBuyersLine(
-          `${claimedUser.name} from ${claimedUser.city} just grabbed free personalisation!`
-        );
-
-        scheduleRef.current = setTimeout(
-          claimNext,
-          6000 + Math.random() * 8000
-        );
-      }, 700);
-    };
-
-    scheduleRef.current = setTimeout(
-      claimNext,
-      6000 + Math.random() * 4000
-    );
-
-    return () => {
-      cancelled = true;
-      clearTimeout(scheduleRef.current);
-      clearTimeout(settleRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!toast) return;
-    const id = setTimeout(() => setToast(null), 3200);
-    return () => clearTimeout(id);
-  }, [toast]);
-
-  const takenCount = slots.filter((s) => s.state === "taken").length;
-  const claimedRatio = Math.round((takenCount / TOTAL_SLOTS) * 100);
-  const openLeft = slots.filter((s) => s.state === "open").length;
-  const slotsLeftLabel =
-    openLeft <= 0 ? "last slot" : `${openLeft} ${openLeft === 1 ? "slot" : "slots"}`;
-
-  const claimOffer = () => {
-    setToast("🎉 Free personalisation applied! Complete your order.");
-    if (youClaimedRef.current) return;
-    youClaimedRef.current = true;
-    setSlots((prev) =>
-      prev.map((s, i) => (i === 6 ? { ...s, state: "claimed" } : s))
-    );
-    setTimeout(() => {
-      setSlots((prev) =>
-        prev.map((s, i) => (i === 6 ? { ...s, state: "you" } : s))
-      );
-    }, 1500);
-  };
+  const rewardProgress = useMemo(
+    () => Math.min(100, Math.round((bagTotal / 900) * 100)),
+    [bagTotal]
+  );
 
   /* ---------- PAYMENT COPY ---------- */
   const payCtaLabel =
@@ -196,50 +77,6 @@ const CartMobile = ({
     paymentMethod === PAYMENT_METHOD.PARTIAL_COD
       ? formatINR(partial.advanceAmount)
       : formatINR(total);
-
-  /* ---------- RENDER HELPERS ---------- */
-  const renderSlot = (s, idx) => {
-    if (idx === 6) {
-      if (s.state === "claimed") {
-        return (
-          <div key={idx} className={`${styles.slot} ${styles.slotClaimed}`}>
-            <div className={styles.sStar}>✓</div>
-            <div className={`${styles.sName} ${styles.sNameYou}`}>YOU</div>
-          </div>
-        );
-      }
-      return (
-        <div key={idx} className={`${styles.slot} ${styles.slotYou}`}>
-          <div className={styles.sStar}>★</div>
-          <div className={`${styles.sName} ${styles.sNameYou}`}>YOU</div>
-        </div>
-      );
-    }
-    if (s.state === "taken") {
-      return (
-        <div key={idx} className={`${styles.slot} ${styles.slotTaken}`}>
-          <div className={styles.sX}>✕</div>
-          <div className={styles.sName}>{initials(s.user?.name)}</div>
-        </div>
-      );
-    }
-    if (s.state === "claiming") {
-      return (
-        <div key={idx} className={`${styles.slot} ${styles.slotClaiming}`}>
-          <div className={styles.sStar}>✓</div>
-          <div className={`${styles.sName} ${styles.sNameClaim}`}>
-            {initials(s.user?.name)}
-          </div>
-        </div>
-      );
-    }
-    return (
-      <div key={idx} className={`${styles.slot} ${styles.slotOpen}`}>
-        <div className={styles.sDot} />
-        <div className={`${styles.sName} ${styles.sNameOpen}`}>Open</div>
-      </div>
-    );
-  };
 
   return (
     <div className={styles.mobileCart}>
@@ -263,7 +100,7 @@ const CartMobile = ({
           <div className={styles.rwBg} />
           <div
             className={styles.rwFill}
-            style={{ width: `${Math.min(100, claimedRatio)}%` }}
+            style={{ width: `${rewardProgress}%` }}
           />
           <div className={styles.rwDots}>
             <div className={styles.rwDot}>
@@ -302,102 +139,14 @@ const CartMobile = ({
               <span className={styles.mqD} />
               <span className={styles.mqT}>THEIR WORD. YOUR LOVE. FREE TODAY</span>
               <span className={styles.mqD} />
-              <span className={styles.mqT}>⚡ ONLY {openLeft || 1} SLOTS LEFT</span>
+              <span className={styles.mqT}>⚡ LIMITED SLOTS TODAY</span>
               <span className={styles.mqD} />
             </span>
           ))}
         </div>
       </div>
 
-      {/* FOMO CARD */}
-      <div className={styles.fc}>
-        <div className={styles.fcInner}>
-          <div className={styles.fcEye}>
-            <div className={styles.fcDot} />
-            <div className={styles.fcLive}>Live Offer · Ends Soon</div>
-            <div className={styles.fcSite}>onrise.in</div>
-          </div>
-
-          <div className={styles.fcProof}>
-            <span className={styles.fcProofIcon}>❤️</span>
-            <span className={styles.fcProofTxt}>
-              Trusted by <strong>2,000+ happy parents</strong>{" "}
-              across India
-            </span>
-          </div>
-
-          <div className={styles.fcTop}>
-            <div className={styles.fcH}>
-              <div className={styles.fcHW}>YOU KNOW THEM</div>
-              <div className={styles.fcHO}>BETTER THAN</div>
-              <div className={styles.fcHG}>ANYONE DOES ✦</div>
-            </div>
-            <div className={styles.fcCd}>
-              <div className={styles.fcCdLbl}>Ends in</div>
-              <div className={styles.fcCdBoxes}>
-                <div className={styles.fcCdBox}>
-                  <span className={styles.fcCdNum}>{formatTwo(mins)}</span>
-                  <span className={styles.fcCdUnit}>min</span>
-                </div>
-                <div className={styles.fcCdSep}>:</div>
-                <div className={styles.fcCdBox}>
-                  <span className={styles.fcCdNum}>{formatTwo(ss)}</span>
-                  <span className={styles.fcCdUnit}>sec</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className={styles.fcSub}>
-            Only you know the perfect word for them.{" "}
-            <strong>Claim it free before this batch closes</strong> —{" "}
-            <span>{slotsLeftLabel}</span> left.
-          </div>
-
-          <div className={styles.slotsWrap}>{slots.map(renderSlot)}</div>
-
-          <div className={styles.slotsMeta}>
-            <div className={styles.slotsCount}>
-              <span>{takenCount}</span>/{TOTAL_SLOTS} claimed
-            </div>
-            <div className={styles.slotsBarW}>
-              <div
-                className={styles.slotsBar}
-                style={{ width: `${claimedRatio}%` }}
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className={styles.fcCta}
-            onClick={claimOffer}
-          >
-            <div>
-              <div className={styles.ctaT}>Claim FREE Personalisation</div>
-              <div className={styles.ctaS}>
-                Auto-applied at checkout · ₹99 value yours free
-              </div>
-            </div>
-            <div className={styles.ctaPill}>₹0</div>
-          </button>
-        </div>
-
-        <div className={styles.buyers}>
-          <div className={styles.bAvs}>
-            {buyerAvatars.map((u, i) => (
-              <div
-                key={i}
-                className={styles.bAv}
-                style={{ background: u.color }}
-              >
-                {u.emoji}
-              </div>
-            ))}
-          </div>
-          <div className={styles.bTxt}>{buyersLine}</div>
-        </div>
-      </div>
+      <CartOfferCard />
 
       {/* OFFER STRIP */}
       {(freeDelivery || discount > 0) && (
@@ -811,7 +560,24 @@ const CartMobile = ({
         <div className={styles.waA}>→</div>
       </a>
 
-      <div className={styles.spacer} />
+      <div className={styles.brandTrust}>
+        <div className={styles.btLock}>🔒</div>
+        <div className={styles.btTxt}>
+          Onrise is a <span className={styles.pe}>PrintEasy</span> brand
+          &nbsp;·&nbsp;
+          <strong>Trusted by 2,000+ families</strong> &nbsp;·&nbsp; Safe
+          &amp; secure checkout
+        </div>
+      </div>
+      {savings > 0 && (
+        <div className={styles.svPill}>
+          <div className={styles.svPillIn}>
+            🎉 You&apos;re saving {formatINR(savings)} on this order
+          </div>
+        </div>
+      )}
+
+      <div className={styles.pageSpacer} aria-hidden />
 
       <div className={styles.shopMoreFloat}>
         <span className={styles.shopMoreLbl}>Shop More</span>
@@ -853,22 +619,6 @@ const CartMobile = ({
 
       {/* STICKY FOOTER */}
       <div className={styles.sticky}>
-        <div className={styles.brandTrust}>
-          <div className={styles.btLock}>🔒</div>
-          <div className={styles.btTxt}>
-            Onrise is a <span className={styles.pe}>PrintEasy</span> brand
-            &nbsp;·&nbsp;
-            <strong>Trusted by 2,000+ families</strong>{" "}
-            &nbsp;·&nbsp; Safe &amp; secure checkout
-          </div>
-        </div>
-        {savings > 0 && (
-          <div className={styles.svPill}>
-            <div className={styles.svPillIn}>
-              🎉 You&apos;re saving {formatINR(savings)} on this order
-            </div>
-          </div>
-        )}
         <button
           type="button"
           className={styles.coBtn}
@@ -889,13 +639,6 @@ const CartMobile = ({
           </div>
         </button>
       </div>
-
-      {toast && (
-        <div className={`${styles.toast} ${styles.toastShow}`}>
-          <div className={styles.toastDot} />
-          <span>{toast}</span>
-        </div>
-      )}
     </div>
   );
 };
