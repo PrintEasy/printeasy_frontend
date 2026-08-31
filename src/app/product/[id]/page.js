@@ -50,6 +50,7 @@ import {
 import ProductSchema from "@/component/seo/ProductSchema";
 import ProductPixel from "@/component/seo/ProductPixel";
 import YouMayLikeSection from "@/component/YouMayLikeSection/YouMayLikeSection";
+import MaterialSymbol from "@/component/MaterialSymbol/MaterialSymbol";
 import { ChevronUp } from "lucide-react";
 import OfferMarquee from "@/component/OfferMarquee/OfferMarquee";
 import { getReviewStats, productReviews } from "@/data/productReviews";
@@ -180,6 +181,17 @@ function productImageAt(productImages, index) {
   return productImages[((i % productImages.length) + productImages.length) % productImages.length];
 }
 
+function getReviewInitials(name) {
+  if (!name) return "?";
+  const parts = String(name).trim().split(/\s+/);
+  if (parts.length >= 2) {
+    return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
+  }
+  return parts[0].slice(0, 2).toUpperCase();
+}
+
+const WHATSAPP_PHONE = "918310248294";
+
 const ProductDetails = () => {
   const { id } = useParams();
   const router = useRouter();
@@ -214,7 +226,6 @@ const ProductDetails = () => {
   const [cartProductQty, setCartProductQty] = useState(0);
   const [cartProductRowId, setCartProductRowId] = useState(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [reviewFilter, setReviewFilter] = useState("ALL");
   const [heroImageLoading, setHeroImageLoading] = useState(false);
   const mediaHeroMainRef = useRef(null);
   const preservedHeroHeightRef = useRef(null);
@@ -634,26 +645,49 @@ const ProductDetails = () => {
 
   const reviewStats = useMemo(() => getReviewStats(productReviews), []);
 
-  const filteredReviews = useMemo(() => {
-    const all = productReviews;
-    if (reviewFilter === "PHOTOS") return all.filter((r) => r.hasPhotos);
-    if (reviewFilter === "5") return all.filter((r) => Number(r.rating) === 5);
-    if (reviewFilter === "4") return all.filter((r) => Number(r.rating) === 4);
-    return all;
-  }, [reviewFilter]);
+  const productHighlights = useMemo(
+    () => [
+      {
+        icon: "checkroom",
+        label: "Fabric",
+        value:
+          product?.fabric ||
+          product?.material ||
+          product?.fabricType ||
+          "100% Combed Cotton",
+      },
+      {
+        icon: "scale",
+        label: "Weight",
+        value:
+          product?.gsm != null
+            ? `${product.gsm} GSM`
+            : product?.fabricWeight || "210 GSM",
+      },
+      {
+        icon: "accessibility_new",
+        label: "Fit",
+        value: product?.fit || product?.fitType || "Regular",
+      },
+      {
+        icon: "brush",
+        label: "Print",
+        value:
+          product?.printType ||
+          product?.printMethod ||
+          product?.print_type ||
+          (product?.isCustomizable ? "DTF" : "DTF"),
+      },
+    ],
+    [product]
+  );
 
-  const reviewPhotoThumbs = useMemo(() => {
-    const images = normalizeProductImages(product);
-    if (!images.length) return [];
-    const thumbs = [];
-    for (const r of productReviews) {
-      for (const idx of r.photos || []) {
-        const url = productImageAt(images, idx);
-        if (url) thumbs.push(url);
-      }
-    }
-    return thumbs.slice(0, 5);
-  }, [product]);
+  const openWhatsAppSizeHelp = () => {
+    const message = encodeURIComponent(
+      `Hi! I need help choosing a size for ${product?.name || "this product"}.`
+    );
+    window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${message}`, "_blank");
+  };
 
   if (loading) {
     return <ProductDetailsShimmer />;
@@ -1059,256 +1093,121 @@ const ProductDetails = () => {
                 </>
               )}
 
-              <div className={styles.secGap} />
-              <div className={styles.revSec} id="revSec">
-                <div className={styles.secHdr}>
-                  <div className={styles.secTitle}>Customer Reviews</div>
-                  <button
-                    type="button"
-                    className={styles.secLink}
-                    onClick={() => {
-                      const el = document.getElementById("revSec");
-                      if (el) el.scrollIntoView({ behavior: "smooth" });
-                    }}
-                  >
-                    See all {reviewStats.total} →
-                  </button>
+              <div className={styles.productExtras}>
+                <div className={styles.trustStrip}>
+                  <span>✓ Premium Cotton</span>
+                  <span className={styles.trustDivider}>|</span>
+                  <span>🚚 Fast Delivery</span>
+                  <span className={styles.trustDivider}>|</span>
+                  <span>✨ Made Just for You</span>
                 </div>
 
-                <div className={styles.ratingSummary}>
-                  <div className={styles.rbBig}>
-                    <div className={styles.rbBigNum}>{reviewStats.avg}</div>
-                    <div className={styles.rbBigStars} aria-label="Rating">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <span
-                          key={i}
-                          className={`${styles.rbBigS} ${
-                            i < Math.round(reviewStats.avg)
-                              ? ""
-                              : styles.rbBigSEmpty
-                          }`}
-                        >
-                          ★
-                        </span>
-                      ))}
-                    </div>
-                    <div className={styles.rbBigCnt}>
-                      {reviewStats.total} reviews
-                    </div>
-                  </div>
-                  <div className={styles.rbBars}>
-                    {[5, 4, 3, 2, 1].map((star) => {
-                      const count = reviewStats.byStar[star] || 0;
-                      const pct =
-                        reviewStats.total > 0
-                          ? Math.round((count / reviewStats.total) * 100)
-                          : 0;
-                      return (
-                        <div key={star} className={styles.rbRow}>
-                          <div className={styles.rbLbl}>{star}</div>
-                          <div className={styles.rbTrack}>
-                            <div
-                              className={styles.rbFill}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
-                          <div className={styles.rbCnt}>{count}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className={styles.revFilters}>
-                  <button
-                    type="button"
-                    className={`${styles.rf} ${
-                      reviewFilter === "ALL" ? styles.rfOn : styles.rfOff
-                    }`}
-                    onClick={() => setReviewFilter("ALL")}
-                  >
-                    All ({reviewStats.total})
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.rf} ${
-                      reviewFilter === "PHOTOS" ? styles.rfOn : styles.rfOff
-                    }`}
-                    onClick={() => setReviewFilter("PHOTOS")}
-                  >
-                    With Photos ({reviewStats.withPhotos})
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.rf} ${
-                      reviewFilter === "5" ? styles.rfOn : styles.rfOff
-                    }`}
-                    onClick={() => setReviewFilter("5")}
-                  >
-                    5 ★ ({reviewStats.byStar[5] || 0})
-                  </button>
-                  <button
-                    type="button"
-                    className={`${styles.rf} ${
-                      reviewFilter === "4" ? styles.rfOn : styles.rfOff
-                    }`}
-                    onClick={() => setReviewFilter("4")}
-                  >
-                    4 ★ ({reviewStats.byStar[4] || 0})
-                  </button>
-                </div>
-
-                {reviewPhotoThumbs.length > 0 ? (
-                  <div className={styles.photoRow}>
-                    {reviewPhotoThumbs.map((src, idx) => (
-                      <button
-                        key={`${src}-${idx}`}
-                        type="button"
-                        className={styles.phThumb}
-                        aria-label="Review photo"
-                      >
-                        <Image
-                          src={src}
-                          alt=""
-                          width={66}
-                          height={66}
-                          className={styles.phThumbImg}
-                        />
-                      </button>
-                    ))}
-                    {productReviews.reduce(
-                      (n, r) => n + (r.photos?.length || 0),
-                      0
-                    ) > reviewPhotoThumbs.length ? (
-                      <button
-                        type="button"
-                        className={styles.phThumb}
-                        aria-label="More photos"
-                      >
-                        {reviewPhotoThumbs[reviewPhotoThumbs.length - 1] ? (
-                          <Image
-                            src={
-                              reviewPhotoThumbs[reviewPhotoThumbs.length - 1]
-                            }
-                            alt=""
-                            width={66}
-                            height={66}
-                            className={styles.phThumbImg}
-                          />
-                        ) : null}
-                        <span className={styles.phMore}>
-                          +
-                          {Math.max(
-                            0,
-                            productReviews.reduce(
-                              (n, r) => n + (r.photos?.length || 0),
-                              0
-                            ) - reviewPhotoThumbs.length
-                          )}
-                        </span>
-                      </button>
-                    ) : null}
-                  </div>
-                ) : null}
-
-                <div className={styles.revCards}>
-                  {filteredReviews.map((r) => (
-                    <div key={r.id} className={styles.revCard}>
-                      <div className={styles.rcTop}>
-                        <div className={styles.rcUser}>
-                          <div
-                            className={styles.rcAv}
-                            style={{ background: r.color }}
-                          >
-                            {r.initial}
-                          </div>
-                          <div>
-                            <div className={styles.rcName}>{r.name}</div>
-                            <div className={styles.rcDate}>
-                              {r.date} · {r.location}
-                            </div>
-                            <div className={styles.rcVer}>
-                              Verified Purchase
-                            </div>
-                          </div>
-                        </div>
-                        <div className={styles.rcStars} aria-label="Stars">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <span
-                              key={i}
-                              className={`${styles.rcS} ${
-                                i < r.rating ? "" : styles.rcSEmpty
-                              }`}
-                            >
-                              ★
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                      <div className={styles.rcTitle}>{r.title}</div>
-                      <div className={styles.rcText}>{r.text}</div>
-                      {r.photos?.length && productImages.length > 0 ? (
-                        <div className={styles.rcImgs}>
-                          {r.photos.slice(0, 2).map((photoIdx, idx) => {
-                            const src = productImageAt(
-                              productImages,
-                              photoIdx
-                            );
-                            if (!src) return null;
-                            return (
-                              <div key={idx} className={styles.rcImg}>
-                                <Image
-                                  src={src}
-                                  alt=""
-                                  width={52}
-                                  height={52}
-                                  className={styles.rcImgPhoto}
-                                />
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : null}
-                      {r.tags?.length ? (
-                        <div className={styles.rcTags}>
-                          {r.tags.map((t) => (
-                            <span key={t} className={styles.rcTag}>
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                      <div className={styles.rcBtm}>
-                        <div className={styles.rcHelpfulTxt}>
-                          {r.helpfulCount} people found this helpful
-                        </div>
-                        <button
-                          type="button"
-                          className={styles.rcHelpfulBtn}
-                          onClick={() => toast("Thanks for your feedback!")}
-                        >
-                          Helpful
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* <button
-                    type="button"
-                    className={styles.writeRev}
-                    onClick={() => toast("Review flow coming soon")}
-                  >
-                    <span className={styles.wrIcon}>✍️</span>
-                    <span className={styles.wrTxtWrap}>
-                      <span className={styles.wrTitle}>
-                        Bought this? Write a review
-                      </span>
-                      <span className={styles.wrSub}>
-                        Help other parents make the right choice
-                      </span>
+                <button
+                  type="button"
+                  className={styles.waSizeHelp}
+                  onClick={openWhatsAppSizeHelp}
+                >
+                  <div className={styles.waSizeHelpLeft}>
+                    <span className={styles.waSizeHelpIcon} aria-hidden>
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                      </svg>
                     </span>
-                    <span className={styles.wrArr}>›</span>
-                  </button> */}
+                    <span>Not sure about size?</span>
+                  </div>
+                  <span className={styles.waSizeHelpCta}>Chat with us →</span>
+                </button>
+
+                <div className={styles.deliveryCard}>
+                  <div className={styles.deliveryStep}>
+                    <div className={styles.deliveryIconActive}>
+                      <MaterialSymbol name="order_approve" size={20} />
+                    </div>
+                    <p className={styles.deliveryLabel}>Ordered</p>
+                    <p className={styles.deliverySub}>Today</p>
+                    <span className={styles.deliveryLine} aria-hidden />
+                  </div>
+                  <div className={styles.deliveryStep}>
+                    <div className={styles.deliveryIcon}>
+                      <MaterialSymbol name="package_2" size={20} />
+                    </div>
+                    <p className={styles.deliveryLabel}>Packed</p>
+                    <p className={styles.deliverySub}>2-3 Days</p>
+                    <span
+                      className={`${styles.deliveryLine} ${styles.deliveryLineDashed}`}
+                      aria-hidden
+                    />
+                  </div>
+                  <div className={styles.deliveryStep}>
+                    <div className={styles.deliveryIcon}>
+                      <MaterialSymbol name="local_shipping" size={20} />
+                    </div>
+                    <p className={styles.deliveryLabel}>Delivered</p>
+                    <p className={styles.deliverySub}>5-7 Days</p>
+                  </div>
+                </div>
+
+                <div className={styles.whatYouGet}>
+                  <h3 className={styles.whatYouGetTitle}>What You&apos;ll Get</h3>
+                  <div className={styles.whatYouGetGrid}>
+                    {productHighlights.map((item) => (
+                      <div key={item.label} className={styles.whatYouGetCard}>
+                        <div className={styles.whatYouGetIconWrap}>
+                          <MaterialSymbol name={item.icon} size={24} />
+                        </div>
+                        <div>
+                          <p className={styles.whatYouGetLabel}>{item.label}</p>
+                          <p className={styles.whatYouGetValue}>{item.value}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.revSec} id="revSec">
+                  <h3 className={styles.revHeadline}>
+                    ❤️ Loved by 10,000+ Happy Customers
+                  </h3>
+                  <div className={styles.revRatingRow}>
+                    <span className={styles.revStars} aria-hidden>
+                      ★★★★★
+                    </span>
+                    <span className={styles.revRatingText}>
+                      {reviewStats.avg}/5 Customer Rating
+                    </span>
+                  </div>
+
+                  <div className={styles.revCarousel}>
+                    {productReviews.map((r) => (
+                      <article key={r.id} className={styles.revCarouselCard}>
+                        <div className={styles.revCarouselTop}>
+                          <div className={styles.revCarouselStars}>
+                            {Array.from({ length: 5 }).map((_, i) => (
+                              <MaterialSymbol
+                                key={i}
+                                name="star"
+                                size={16}
+                                filled={i < r.rating}
+                                className={
+                                  i < r.rating
+                                    ? styles.starFilled
+                                    : styles.starEmpty
+                                }
+                              />
+                            ))}
+                          </div>
+                          <span className={styles.revVerified}>Verified Buyer</span>
+                        </div>
+                        <p className={styles.revQuote}>&ldquo;{r.text}&rdquo;</p>
+                        <div className={styles.revAuthor}>
+                          <div className={styles.revAvatar}>
+                            {getReviewInitials(r.name)}
+                          </div>
+                          <span className={styles.revAuthorName}>{r.name}</span>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
                 </div>
               </div>
 
