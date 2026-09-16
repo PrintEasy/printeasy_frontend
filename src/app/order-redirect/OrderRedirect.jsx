@@ -24,10 +24,21 @@ export default function OrderRedirect() {
 
   const pollingRef = useRef(null);
   const attemptsRef = useRef(0);
+  /** @type {React.MutableRefObject<"success" | "failed" | null>} */
+  const resolvedRef = useRef(null);
   const maxAttempts = 15;
 
+  const stopPolling = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
+
   const handleSuccess = async (orderId) => {
-    clearInterval(pollingRef.current);
+    if (resolvedRef.current === "success") return;
+    resolvedRef.current = "success";
+    stopPolling();
     setStatus("success");
     localStorage.setItem("orderId", orderId);
     clearPendingOrderStorage();
@@ -36,7 +47,9 @@ export default function OrderRedirect() {
   };
 
   const handleFailure = () => {
-    clearInterval(pollingRef.current);
+    if (resolvedRef.current) return;
+    resolvedRef.current = "failed";
+    stopPolling();
     setStatus("failed");
     toast.error("Payment failed or cancelled");
     clearPendingOrderStorage();
@@ -44,8 +57,11 @@ export default function OrderRedirect() {
   };
 
   const checkOrderStatus = async (orderId) => {
+    if (resolvedRef.current) return;
+
     try {
       const response = await fetchOrderStatus(orderId);
+      if (resolvedRef.current) return;
       if (!response?.success) return;
 
       const orderData = response.data;
@@ -63,6 +79,7 @@ export default function OrderRedirect() {
           });
         }
         await handleSuccess(orderData.orderId || orderId);
+        return;
       }
 
       if (orderStatus === "failed" || orderStatus === "cancelled") {
@@ -74,20 +91,29 @@ export default function OrderRedirect() {
   };
 
   const pollOrderStatus = (orderId) => {
+    if (resolvedRef.current) return;
+
+    stopPolling();
     attemptsRef.current = 0;
-    checkOrderStatus(orderId);
+    void checkOrderStatus(orderId);
 
     pollingRef.current = setInterval(() => {
+      if (resolvedRef.current) {
+        stopPolling();
+        return;
+      }
+
       attemptsRef.current += 1;
 
       if (attemptsRef.current >= maxAttempts) {
-        clearInterval(pollingRef.current);
+        stopPolling();
+        if (resolvedRef.current) return;
         setStatus("timeout");
         setLoading(false);
         return;
       }
 
-      checkOrderStatus(orderId);
+      void checkOrderStatus(orderId);
     }, 1000);
   };
 
@@ -124,11 +150,13 @@ export default function OrderRedirect() {
         const txStatus = (verifyPayload.txStatus || "").toUpperCase();
 
         if (txStatus && txStatus !== "SUCCESS") {
-          handleFailure();
+          if (!cancelled) handleFailure();
           return;
         }
 
         const verifyResult = await verifyPayment(verifyPayload);
+        if (resolvedRef.current) return;
+
         if (verifyResult?.status === "confirmed") {
           if (pendingMethod === PAYMENT_METHOD.PARTIAL_COD) {
             setPartialSummary({
@@ -150,7 +178,7 @@ export default function OrderRedirect() {
         console.error("Payment verify failed, falling back to polling", error);
       }
 
-      if (!cancelled) {
+      if (!cancelled && !resolvedRef.current) {
         pollOrderStatus(backendOrderId);
       }
     };
@@ -161,7 +189,7 @@ export default function OrderRedirect() {
 
     return () => {
       cancelled = true;
-      if (pollingRef.current) clearInterval(pollingRef.current);
+      stopPolling();
     };
   }, [searchParams]);
 
